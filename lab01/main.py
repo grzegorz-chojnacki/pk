@@ -26,7 +26,7 @@ class Caesar:
             else:
                 return key
         except:
-            print('Zły format klucza: ' + key)
+            print(f'Zły format klucza: \"{keyStr}\"')
             sys.exit(3)
 
     @staticmethod
@@ -58,7 +58,7 @@ class Afinic:
             else:
                 return key
         except:
-            print('Zły format klucza: ' + key)
+            print(f'Zły format klucza: \"{keyStr}\"')
             sys.exit(3)
 
     @staticmethod
@@ -90,7 +90,7 @@ def transform(method, input_file, output_file):
             output.close()
             return True
         except FileNotFoundError as err:
-            print('Nie znaleziono pliku ' + err.filename)
+            print(f'Nie znaleziono pliku \"{err.filename}\"')
             sys.exit(2)
 
 def encrypt(algorithm):
@@ -125,7 +125,7 @@ for o, a in opts:
         pass
 
 if operation is None or algorithm is None:
-    print('usage: ' + sys.argv[0] +  ' -[ac] -[edjk]')
+    print(f'usage: {sys.argv[0]} -[ac] -[edjk]')
     sys.exit(2)
 
 operation(algorithm)
