@@ -52,7 +52,7 @@ class Caesar:
             return letter
 
 
-class Afinic:
+class Affine:
     @staticmethod
     def parseKey(key_str):
         try:
@@ -69,7 +69,7 @@ class Afinic:
 
     @staticmethod
     def encrypt(letter, key_str):
-        a, b = Afinic.parseKey(key_str)
+        a, b = Affine.parseKey(key_str)
         if letter.isalpha():
             offset = case_offset(letter)
             return chr((a * (ord(letter) - offset) + b) % 26 + offset)
@@ -78,7 +78,7 @@ class Afinic:
 
     @staticmethod
     def decrypt(letter, key_str):
-        a, b = Afinic.parseKey(key_str)
+        a, b = Affine.parseKey(key_str)
         a = pow(a, -1, 26)
         if letter.isalpha():
             offset = case_offset(letter)
@@ -112,31 +112,32 @@ def decrypt(algorithm):
         print('Poprawnie odszyfrowano')
 
 
-try:
-    opts, args = getopt.getopt(sys.argv[1:], 'caedjk')
-except getopt.GetoptError as err:
-    print(err)
-    sys.exit(1)
+def main():
+    try:
+        opts, _ = getopt.getopt(sys.argv[1:], 'caedjk')
+        for o, _ in opts:
+            if o == '-c':
+                algorithm = Caesar
+            elif o == '-a':
+                algorithm = Affine
+            elif o == '-e':
+                operation = encrypt
+            elif o == '-d':
+                operation = decrypt
+            elif o == '-j':
+                pass
+            elif o == '-k':
+                pass
 
-operation = None
-algorithm = None
+        if operation is None or algorithm is None:
+            print(f'usage: {sys.argv[0]} -[ac] -[edjk]')
+            sys.exit(2)
+        else:
+            operation(algorithm)
+    except getopt.GetoptError as err:
+        print(err)
+        sys.exit(1)
 
-for o, a in opts:
-    if o == '-c':
-        algorithm = Caesar
-    elif o == '-a':
-        algorithm = Afinic
-    elif o == '-e':
-        operation = encrypt
-    elif o == '-d':
-        operation = decrypt
-    elif o == '-j':
-        pass
-    elif o == '-k':
-        pass
 
-if operation is None or algorithm is None:
-    print(f'usage: {sys.argv[0]} -[ac] -[edjk]')
-    sys.exit(2)
-
-operation(algorithm)
+if __name__ == "__main__":
+    main()
