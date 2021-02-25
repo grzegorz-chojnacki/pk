@@ -12,7 +12,8 @@ File = {
     'key_found': 'key-found.txt',
 }
 
-ALPHABET_SIZE = ALPHABET_SIZE
+ALPHABET_SIZE = 26
+
 
 def case_offset(letter):
     if letter.isupper():
@@ -58,6 +59,12 @@ class Caesar:
 
 
 class Affine:
+    @staticmethod
+    def key_range():
+        return [f'{a} {b}' # ToDo: zmienić miejsce parsowania klucza, tak by można było zwrócić tu krotke
+                for a in range(1, ALPHABET_SIZE) if math.gcd(a, ALPHABET_SIZE) == 1
+                for b in range(0, ALPHABET_SIZE)
+                ]
 
     @staticmethod
     def parse_key(key_str):
@@ -121,10 +128,12 @@ def brute_force(algorithm):
         text = text.read()
         try:
             for key in algorithm.key_range():
-                result = ''.join([algorithm.decrypt(letter, key) for letter in text])
+                result = ''.join([algorithm.decrypt(letter, key)
+                                  for letter in text])
                 output.write(f'### Key: {key}\n')
                 output.write(result)
                 output.write('\n')
+            print('Zakończono odszyfrowywanie')
             return True
         except FileNotFoundError as err:
             print(f'Nie znaleziono pliku \"{err.filename}\"')
@@ -134,6 +143,7 @@ def brute_force(algorithm):
 def main():
     try:
         opts, _ = getopt.getopt(sys.argv[1:], 'caedjk')
+        operation = algorithm = None
         for o, _ in opts:
             if o == '-c':
                 algorithm = Caesar
