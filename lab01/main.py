@@ -37,39 +37,30 @@ class Caesar:
 def afinic():
     pass
 
-def encrypt(method):
-    with open(File['plain']) as text, open(File['key']) as key:
+def transform(method, input_file, output_file):
+    with open(File[input_file]) as text, open(File['key']) as key:
         try:
             key = int(next(key))
             if key not in range(1, 26):
                 raise Exception()
-            output = open(File['crypto'], 'w')
-            result = ''.join([ method.encrypt(letter, key) for letter in text.read() ])
+            output = open(File[output_file], 'w')
+            result = ''.join([ method(letter, key) for letter in text.read() ])
             output.write(result)
             output.close()
-            print('Poprawnie zaszyfrowano')
+            return True
         except FileNotFoundError as err:
             print('Nie znaleziono pliku ' + err.filename)
         except:
             print('Klucz nie jest liczbą z zakresu: 1..25')
-            sys.exit(1)
+            sys.exit(2)
 
-def decrypt(method):
-    with open(File['crypto']) as msg, open(File['key']) as key:
-        try:
-            key = int(next(key))
-            if key not in range(1, 26):
-                raise Exception()
-            output = open(File['decrypt'], 'w')
-            result = ''.join([ method.decrypt(letter, key) for letter in msg.read() ])
-            output.write(result)
-            output.close()
-            print('Poprawnie odszyfrowano')
-        except FileNotFoundError as err:
-            print('Nie znaleziono pliku ' + err.filename)
-        except:
-            print('Klucz nie jest liczbą z zakresu: 1..25')
-            sys.exit(1)
+def encrypt(algorithm):
+    if transform(algorithm.encrypt, 'plain', 'crypto'):
+        print('Poprawnie zaszyfrowano')
+
+def decrypt(algorithm):
+    if transform(algorithm.decrypt, 'crypto', 'decrypt'):
+        print('Poprawnie odszyfrowano')
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], 'caedjk')
@@ -78,13 +69,13 @@ except getopt.GetoptError as err:
     sys.exit(1)
 
 operation = None
-method    = None
+algorithm = None
 
 for o, a in opts:
     if   o == '-c':
-        method = Caesar
+        algorithm = Caesar
     elif o == '-a':
-        method = afinic
+        algorithm = afinic
     elif o == '-e':
         operation = encrypt
     elif o == '-d':
@@ -94,8 +85,8 @@ for o, a in opts:
     elif o == '-k':
         pass
 
-if operation is None or method is None:
+if operation is None or algorithm is None:
     print('usage: ' + sys.argv[0] +  ' -[ac] -[edjk]')
     sys.exit(2)
 
-operation(method)
+operation(algorithm)
