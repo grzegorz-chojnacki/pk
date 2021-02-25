@@ -12,6 +12,7 @@ File = {
     'key_found': 'key-found.txt',
 }
 
+ALPHABET_SIZE = ALPHABET_SIZE
 
 def case_offset(letter):
     if letter.isupper():
@@ -22,10 +23,14 @@ def case_offset(letter):
 
 class Caesar:
     @staticmethod
-    def parseKey(key_str):
+    def key_range():
+        return range(1, ALPHABET_SIZE)
+
+    @staticmethod
+    def parse_key(key_str):
         try:
             key = int(key_str)
-            if key not in range(1, 26):
+            if key not in Caesar.key_range():
                 raise Exception()
             else:
                 return key
@@ -35,31 +40,32 @@ class Caesar:
 
     @staticmethod
     def encrypt(letter, key_str):
-        key = Caesar.parseKey(key_str)
+        key = Caesar.parse_key(key_str)
         if letter.isalpha():
             offset = case_offset(letter)
-            return chr((ord(letter) - offset + key) % 26 + offset)
+            return chr((ord(letter) - offset + key) % ALPHABET_SIZE + offset)
         else:
             return letter
 
     @staticmethod
     def decrypt(letter, key_str):
-        key = Caesar.parseKey(key_str)
+        key = Caesar.parse_key(key_str)
         if letter.isalpha():
             offset = case_offset(letter)
-            return chr((ord(letter) - offset - key) % 26 + offset)
+            return chr((ord(letter) - offset - key) % ALPHABET_SIZE + offset)
         else:
             return letter
 
 
 class Affine:
+
     @staticmethod
-    def parseKey(key_str):
+    def parse_key(key_str):
         try:
             a, b = key_str.split()
-            a = Caesar.parseKey(a)
+            a = Caesar.parse_key(a)
             b = int(b)
-            if math.gcd(a, 26) == 1:
+            if math.gcd(a, ALPHABET_SIZE) == 1:
                 return a, b
             else:
                 raise Exception()
@@ -69,33 +75,31 @@ class Affine:
 
     @staticmethod
     def encrypt(letter, key_str):
-        a, b = Affine.parseKey(key_str)
+        a, b = Affine.parse_key(key_str)
         if letter.isalpha():
             offset = case_offset(letter)
-            return chr((a * (ord(letter) - offset) + b) % 26 + offset)
+            return chr((a * (ord(letter) - offset) + b) % ALPHABET_SIZE + offset)
         else:
             return letter
 
     @staticmethod
     def decrypt(letter, key_str):
-        a, b = Affine.parseKey(key_str)
-        a = pow(a, -1, 26)
+        a, b = Affine.parse_key(key_str)
+        a = pow(a, -1, ALPHABET_SIZE)
         if letter.isalpha():
             offset = case_offset(letter)
-            return chr(a * (ord(letter) - offset - b) % 26 + offset)
+            return chr(a * (ord(letter) - offset - b) % ALPHABET_SIZE + offset)
         else:
             return letter
 
 
 def transform(method, input_file, output_file):
-    with open(File[input_file]) as text, open(File['key']) as key:
+    with open(File[input_file]) as text, open(File['key']) as key, open(File[output_file], 'w') as output:
         try:
-            output = open(File[output_file], 'w')
             key_str = next(key)
             result = ''.join([method(letter, key_str)
                               for letter in text.read()])
             output.write(result)
-            output.close()
             return True
         except FileNotFoundError as err:
             print(f'Nie znaleziono pliku \"{err.filename}\"')
@@ -110,6 +114,21 @@ def encrypt(algorithm):
 def decrypt(algorithm):
     if transform(algorithm.decrypt, 'crypto', 'decrypt'):
         print('Poprawnie odszyfrowano')
+
+
+def brute_force(algorithm):
+    with open(File['crypto']) as text, open(File['decrypt'], 'w') as output:
+        text = text.read()
+        try:
+            for key in algorithm.key_range():
+                result = ''.join([algorithm.decrypt(letter, key) for letter in text])
+                output.write(f'### Key: {key}\n')
+                output.write(result)
+                output.write('\n')
+            return True
+        except FileNotFoundError as err:
+            print(f'Nie znaleziono pliku \"{err.filename}\"')
+            sys.exit(2)
 
 
 def main():
@@ -127,10 +146,10 @@ def main():
             elif o == '-j':
                 pass
             elif o == '-k':
-                pass
+                operation = brute_force
 
         if operation is None or algorithm is None:
-            print(f'usage: {sys.argv[0]} -[ac] -[edjk]')
+            print(f'użycie: {sys.argv[0]} -[ac] -[edjk]')
             sys.exit(2)
         else:
             operation(algorithm)
