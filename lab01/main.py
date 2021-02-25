@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import getopt
 import sys
+import math
 
 File = {
     'plain':     'plain.txt',
@@ -29,7 +30,7 @@ class Caesar:
             else:
                 return key
         except:
-            print(f'Zły format klucza: \"{key_str}\"')
+            print(f'Zły format klucza: {key_str}')
             sys.exit(3)
 
     @staticmethod
@@ -58,26 +59,30 @@ class Afinic:
             a, b = key_str.split()
             a = Caesar.parseKey(a)
             b = int(b)
-            return a
+            if math.gcd(b, 26) == 1:
+                return a, b
+            else:
+                raise Exception()
         except:
-            print(f'Zły format klucza: \"{key_str}\"')
+            print(f'Zły format klucza: {key_str}')
             sys.exit(3)
 
     @staticmethod
     def encrypt(letter, key_str):
-        key = Afinic.parseKey(key_str)
+        a, b = Afinic.parseKey(key_str)
         if letter.isalpha():
             offset = case_offset(letter)
-            return chr((ord(letter) - offset + key) % 26 + offset)
+            return chr((a * (ord(letter) - offset) + b) % 26 + offset)
         else:
             return letter
 
     @staticmethod
     def decrypt(letter, key_str):
-        key = Afinic.parseKey(key_str)
+        a, b = Afinic.parseKey(key_str)
+        a = pow(a, -1, 26)
         if letter.isalpha():
             offset = case_offset(letter)
-            return chr((ord(letter) - offset - key) % 26 + offset)
+            return chr(a * (ord(letter) - offset - b) % 26 + offset)
         else:
             return letter
 
