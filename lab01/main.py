@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
-import getopt, sys
+import getopt
+import sys
 
 File = {
     'plain':     'plain.txt',
@@ -10,39 +11,41 @@ File = {
     'key_found': 'key-found.txt',
 }
 
-def caseOffset(letter):
+
+def case_offset(letter):
     if letter.isupper():
         return ord('A')
     else:
         return ord('a')
 
+
 class Caesar:
     @staticmethod
-    def parseKey(keyStr):
+    def parseKey(key_str):
         try:
-            key = int(keyStr)
+            key = int(key_str)
             if key not in range(1, 26):
                 raise Exception()
             else:
                 return key
         except:
-            print(f'Zły format klucza: \"{keyStr}\"')
+            print(f'Zły format klucza: \"{key_str}\"')
             sys.exit(3)
 
     @staticmethod
-    def encrypt(letter, keyStr):
-        key = Caesar.parseKey(keyStr)
+    def encrypt(letter, key_str):
+        key = Caesar.parseKey(key_str)
         if letter.isalpha():
-            offset = caseOffset(letter)
+            offset = case_offset(letter)
             return chr((ord(letter) - offset + key) % 26 + offset)
         else:
             return letter
 
     @staticmethod
-    def decrypt(letter, keyStr):
-        key = Caesar.parseKey(keyStr)
+    def decrypt(letter, key_str):
+        key = Caesar.parseKey(key_str)
         if letter.isalpha():
-            offset = caseOffset(letter)
+            offset = case_offset(letter)
             return chr((ord(letter) - offset - key) % 26 + offset)
         else:
             return letter
@@ -50,42 +53,42 @@ class Caesar:
 
 class Afinic:
     @staticmethod
-    def parseKey(keyStr):
+    def parseKey(key_str):
         try:
-            key = int(keyStr)
-            if key not in range(1, 26):
-                raise Exception()
-            else:
-                return key
+            a, b = key_str.split()
+            a = Caesar.parseKey(a)
+            b = int(b)
+            return a
         except:
-            print(f'Zły format klucza: \"{keyStr}\"')
+            print(f'Zły format klucza: \"{key_str}\"')
             sys.exit(3)
 
     @staticmethod
-    def encrypt(letter, keyStr):
-        key = Afinic.parseKey(keyStr)
+    def encrypt(letter, key_str):
+        key = Afinic.parseKey(key_str)
         if letter.isalpha():
-            offset = caseOffset(letter)
+            offset = case_offset(letter)
             return chr((ord(letter) - offset + key) % 26 + offset)
         else:
             return letter
 
     @staticmethod
-    def decrypt(letter, keyStr):
-        key = Afinic.parseKey(keyStr)
+    def decrypt(letter, key_str):
+        key = Afinic.parseKey(key_str)
         if letter.isalpha():
-            offset = caseOffset(letter)
+            offset = case_offset(letter)
             return chr((ord(letter) - offset - key) % 26 + offset)
         else:
             return letter
-
 
 
 def transform(method, input_file, output_file):
     with open(File[input_file]) as text, open(File['key']) as key:
         try:
             output = open(File[output_file], 'w')
-            result = ''.join([ method(letter, next(key)) for letter in text.read() ])
+            key_str = next(key)
+            result = ''.join([method(letter, key_str)
+                              for letter in text.read()])
             output.write(result)
             output.close()
             return True
@@ -93,13 +96,16 @@ def transform(method, input_file, output_file):
             print(f'Nie znaleziono pliku \"{err.filename}\"')
             sys.exit(2)
 
+
 def encrypt(algorithm):
     if transform(algorithm.encrypt, 'plain', 'crypto'):
         print('Poprawnie zaszyfrowano')
 
+
 def decrypt(algorithm):
     if transform(algorithm.decrypt, 'crypto', 'decrypt'):
         print('Poprawnie odszyfrowano')
+
 
 try:
     opts, args = getopt.getopt(sys.argv[1:], 'caedjk')
@@ -111,7 +117,7 @@ operation = None
 algorithm = None
 
 for o, a in opts:
-    if   o == '-c':
+    if o == '-c':
         algorithm = Caesar
     elif o == '-a':
         algorithm = Afinic
