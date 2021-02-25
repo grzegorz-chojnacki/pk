@@ -18,7 +18,20 @@ def caseOffset(letter):
 
 class Caesar:
     @staticmethod
-    def encrypt(letter, key):
+    def parseKey(keyStr):
+        try:
+            key = int(keyStr)
+            if key not in range(1, 26):
+                raise Exception()
+            else:
+                return key
+        except:
+            print('Zły format klucza: ' + key)
+            sys.exit(3)
+
+    @staticmethod
+    def encrypt(letter, keyStr):
+        key = Caesar.parseKey(keyStr)
         if letter.isalpha():
             offset = caseOffset(letter)
             return chr((ord(letter) - offset + key) % 26 + offset)
@@ -26,7 +39,8 @@ class Caesar:
             return letter
 
     @staticmethod
-    def decrypt(letter, key):
+    def decrypt(letter, keyStr):
+        key = Caesar.parseKey(keyStr)
         if letter.isalpha():
             offset = caseOffset(letter)
             return chr((ord(letter) - offset - key) % 26 + offset)
@@ -34,24 +48,49 @@ class Caesar:
             return letter
 
 
-def afinic():
-    pass
+class Afinic:
+    @staticmethod
+    def parseKey(keyStr):
+        try:
+            key = int(keyStr)
+            if key not in range(1, 26):
+                raise Exception()
+            else:
+                return key
+        except:
+            print('Zły format klucza: ' + key)
+            sys.exit(3)
+
+    @staticmethod
+    def encrypt(letter, keyStr):
+        key = Afinic.parseKey(keyStr)
+        if letter.isalpha():
+            offset = caseOffset(letter)
+            return chr((ord(letter) - offset + key) % 26 + offset)
+        else:
+            return letter
+
+    @staticmethod
+    def decrypt(letter, keyStr):
+        key = Afinic.parseKey(keyStr)
+        if letter.isalpha():
+            offset = caseOffset(letter)
+            return chr((ord(letter) - offset - key) % 26 + offset)
+        else:
+            return letter
+
+
 
 def transform(method, input_file, output_file):
     with open(File[input_file]) as text, open(File['key']) as key:
         try:
-            key = int(next(key))
-            if key not in range(1, 26):
-                raise Exception()
             output = open(File[output_file], 'w')
-            result = ''.join([ method(letter, key) for letter in text.read() ])
+            result = ''.join([ method(letter, next(key)) for letter in text.read() ])
             output.write(result)
             output.close()
             return True
         except FileNotFoundError as err:
             print('Nie znaleziono pliku ' + err.filename)
-        except:
-            print('Klucz nie jest liczbą z zakresu: 1..25')
             sys.exit(2)
 
 def encrypt(algorithm):
@@ -75,7 +114,7 @@ for o, a in opts:
     if   o == '-c':
         algorithm = Caesar
     elif o == '-a':
-        algorithm = afinic
+        algorithm = Afinic
     elif o == '-e':
         operation = encrypt
     elif o == '-d':
