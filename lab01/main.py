@@ -59,7 +59,7 @@ class Afinic:
             a, b = key_str.split()
             a = Caesar.parseKey(a)
             b = int(b)
-            if math.gcd(b, 26) == 1:
+            if math.gcd(a, 26) == 1:
                 return a, b
             else:
                 raise Exception()
