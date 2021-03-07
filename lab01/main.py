@@ -19,27 +19,25 @@ def transform(method, input_file, output_file):
     with (open(File[input_file]) as text,
           open(File['key']) as key,
           open(File[output_file], 'w') as output):
-        key_str = next(key)
-        result = ''.join([method(letter, key_str)
-                          for letter in text.read()])
-        output.write(result)
-        return True
+        key_str = key.read().strip()
+        result = [method(letter, key_str) for letter in text.read()]
+        output.write(''.join(result))
 
 
 def encrypt(algorithm):
-    if transform(algorithm.encrypt, 'plain', 'crypto'):
-        print('Poprawnie zaszyfrowano')
+    transform(algorithm.encrypt, 'plain', 'crypto')
+    print('Poprawnie zaszyfrowano')
 
 
 def decrypt(algorithm):
-    if transform(algorithm.decrypt, 'crypto', 'decrypt'):
-        print('Poprawnie odszyfrowano')
+    transform(algorithm.decrypt, 'crypto', 'decrypt')
+    print('Poprawnie odszyfrowano')
 
 
 def brute_force(algorithm):
     with (open(File['crypto']) as crypto,
           open(File['decrypt'], 'w') as output):
-        crypto = crypto.read()
+        crypto = crypto.read().strip()
         for key in algorithm.key_range():
             result = ''.join([algorithm.decrypt(letter, key)
                               for letter in crypto])
@@ -54,8 +52,8 @@ def find_key(algorithm):
           open(File['extra']) as extra,
           open(File['decrypt'], 'w') as output,
           open(File['key_found'], 'w') as key_found):
-        crypto = crypto.read()
-        extra = extra.read()
+        crypto = crypto.read().strip()
+        extra = extra.read().strip()
         keys = [algorithm.find_key(pair) for pair in zip(extra, crypto)]
         key = set.intersection(*keys).pop()
         key_found.write(key)
