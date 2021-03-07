@@ -11,8 +11,7 @@ def parse_key(key_str):
     return key
 
 
-def encrypt(letter, key_str):
-    key = parse_key(key_str)
+def encrypt(letter, key):
     if letter.isalpha():
         offset = case_offset(letter)
         return chr((ord(letter) - offset + key) % ALPHABET_SIZE + offset)
@@ -20,8 +19,7 @@ def encrypt(letter, key_str):
         return letter
 
 
-def decrypt(letter, key_str):
-    key = parse_key(key_str)
+def decrypt(letter, key):
     if letter.isalpha():
         offset = case_offset(letter)
         return chr((ord(letter) - offset - key) % ALPHABET_SIZE + offset)
@@ -34,5 +32,8 @@ def find_key(pair):
     result = set()
     for key in key_range():
         if encrypt(e, key) == c:
-            result.add(str(key))
+            result.add(key)
     return result
+
+def key_str(key):
+    return f'{key}'

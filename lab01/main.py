@@ -15,50 +15,50 @@ File = {
 }
 
 
-def transform(method, input_file, output_file):
+def transform(method, algorithm, input_file, output_file):
     with (open(input_file) as text,
           open(File['key']) as key,
           open(output_file, 'w') as output):
-        key_str = key.read().strip()
-        result = [method(letter, key_str) for letter in text.read()]
+        key = method.parse_key(key.read().strip())
+        result = [algorithm(letter, key) for letter in text.read()]
         output.write(''.join(result))
 
 
-def encrypt(algorithm):
-    transform(algorithm.encrypt, File['plain'], File['crypto'])
+def encrypt(method):
+    transform(method, method.encrypt, File['plain'], File['crypto'])
     print('Poprawnie zaszyfrowano')
 
 
-def decrypt(algorithm):
-    transform(algorithm.decrypt, File['crypto'], File['decrypt'])
+def decrypt(method):
+    transform(method, method.decrypt, File['crypto'], File['decrypt'])
     print('Poprawnie odszyfrowano')
 
 
-def brute_force(algorithm):
+def brute_force(method):
     with (open(File['crypto']) as crypto,
           open(File['decrypt'], 'w') as output):
         crypto = crypto.read().strip()
-        for key in algorithm.key_range():
-            result = [algorithm.decrypt(letter, key) for letter in crypto]
+        for key in method.key_range():
+            result = [method.decrypt(letter, key) for letter in crypto]
             output.write(f'### Key: {key}\n')
             output.write(''.join(result))
             output.write('\n\n')
         print('Zakończono odszyfrowywanie')
 
 
-def find_key(algorithm):
+def find_key(method):
     with (open(File['crypto']) as crypto,
           open(File['extra']) as extra,
           open(File['decrypt'], 'w') as output,
           open(File['key_found'], 'w') as key_found):
         crypto = crypto.read().strip()
         extra = extra.read().strip()
-        keys = set.intersection(*[algorithm.find_key(pair)
+        keys = set.intersection(*[method.find_key(pair)
                                   for pair in zip(extra, crypto)])
         assert len(keys) == 1
         key = keys.pop()
-        key_found.write(key)
-        result = [algorithm.decrypt(letter, key) for letter in crypto]
+        key_found.write(method.key_str(key))
+        result = [method.decrypt(letter, key) for letter in crypto]
         output.write(''.join(result))
         print('Znaleziono pasujący klucz')
 
@@ -66,12 +66,12 @@ def find_key(algorithm):
 def main():
     try:
         opts, _ = getopt.getopt(sys.argv[1:], 'caedjk')
-        operation = algorithm = None
+        operation = method = None
         for o, _ in opts:
             if o == '-c':
-                algorithm = caesar
+                method = caesar
             elif o == '-a':
-                algorithm = affine
+                method = affine
             elif o == '-e':
                 operation = encrypt
             elif o == '-d':
@@ -81,11 +81,11 @@ def main():
             elif o == '-k':
                 operation = brute_force
 
-        if operation is None or algorithm is None:
+        if operation is None or method is None:
             print(f'użycie: {sys.argv[0]} -[ac] -[edjk]')
             sys.exit(1)
         else:
-            operation(algorithm)
+            operation(method)
     except getopt.GetoptError as err:
         print(err)
         sys.exit(2)

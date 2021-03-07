@@ -4,7 +4,7 @@ from common import ALPHABET_SIZE, case_offset
 
 
 def key_range():
-    return [f'{a} {b}'  # ToDo: zmienić miejsce parsowania klucza, tak by można było zwrócić tu krotke
+    return [(a, b)
             for a in range(1, ALPHABET_SIZE) if math.gcd(a, ALPHABET_SIZE) == 1
             for b in range(0, ALPHABET_SIZE)
             ]
@@ -18,8 +18,8 @@ def parse_key(key_str):
     return a, b
 
 
-def encrypt(letter, key_str):
-    a, b = parse_key(key_str)
+def encrypt(letter, key):
+    a, b = key
     if letter.isalpha():
         offset = case_offset(letter)
         return chr((a * (ord(letter) - offset) + b) % ALPHABET_SIZE + offset)
@@ -27,8 +27,8 @@ def encrypt(letter, key_str):
         return letter
 
 
-def decrypt(letter, key_str):
-    a, b = parse_key(key_str)
+def decrypt(letter, key):
+    a, b = key
     a = pow(a, -1, ALPHABET_SIZE)
     if letter.isalpha():
         offset = case_offset(letter)
@@ -44,3 +44,7 @@ def find_key(pair):
         if encrypt(e, key) == c:
             result.add(key)
     return result
+
+def key_str(key):
+    a, b = key
+    return f'{a} {b}'
