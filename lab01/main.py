@@ -83,22 +83,21 @@ def main():
 
         if operation is None or algorithm is None:
             print(f'użycie: {sys.argv[0]} -[ac] -[edjk]')
-            sys.exit(2)
+            sys.exit(1)
         else:
-            try:
-                operation(algorithm)
-            except FileNotFoundError as err:
-                print(f'Nie znaleziono pliku: \"{err.filename}\"')
-                sys.exit(3)
-            except ValueError as err:
-                print(f'Zły format klucza: \"{err}\"')
-                sys.exit(4)
-            except AssertionError:
-                print('Nie udało się jednoznacznie rozszyfrować')
-                sys.exit(5)
+            operation(algorithm)
     except getopt.GetoptError as err:
         print(err)
-        sys.exit(1)
+        sys.exit(2)
+    except FileNotFoundError as err:
+        print(f'Nie znaleziono pliku: \"{err.filename}\"')
+        sys.exit(3)
+    except ValueError as err:
+        print(f'Zły format klucza: \"{err}\"')
+        sys.exit(4)
+    except AssertionError:
+        print('Nie udało się jednoznacznie rozszyfrować')
+        sys.exit(5)
 
 
 if __name__ == "__main__":
