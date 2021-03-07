@@ -16,21 +16,21 @@ File = {
 
 
 def transform(method, input_file, output_file):
-    with (open(File[input_file]) as text,
+    with (open(input_file) as text,
           open(File['key']) as key,
-          open(File[output_file], 'w') as output):
+          open(output_file, 'w') as output):
         key_str = key.read().strip()
         result = [method(letter, key_str) for letter in text.read()]
         output.write(''.join(result))
 
 
 def encrypt(algorithm):
-    transform(algorithm.encrypt, 'plain', 'crypto')
+    transform(algorithm.encrypt, File['plain'], File['crypto'])
     print('Poprawnie zaszyfrowano')
 
 
 def decrypt(algorithm):
-    transform(algorithm.decrypt, 'crypto', 'decrypt')
+    transform(algorithm.decrypt, File['crypto'], File['decrypt'])
     print('Poprawnie odszyfrowano')
 
 
@@ -39,11 +39,10 @@ def brute_force(algorithm):
           open(File['decrypt'], 'w') as output):
         crypto = crypto.read().strip()
         for key in algorithm.key_range():
-            result = ''.join([algorithm.decrypt(letter, key)
-                              for letter in crypto])
+            result = [algorithm.decrypt(letter, key) for letter in crypto]
             output.write(f'### Key: {key}\n')
-            output.write(result)
-            output.write('\n')
+            output.write(''.join(result))
+            output.write('\n\n')
         print('Zakończono odszyfrowywanie')
 
 
@@ -54,11 +53,13 @@ def find_key(algorithm):
           open(File['key_found'], 'w') as key_found):
         crypto = crypto.read().strip()
         extra = extra.read().strip()
-        keys = [algorithm.find_key(pair) for pair in zip(extra, crypto)]
-        key = set.intersection(*keys).pop()
+        keys = set.intersection(*[algorithm.find_key(pair)
+                                  for pair in zip(extra, crypto)])
+        assert len(keys) == 1
+        key = keys.pop()
         key_found.write(key)
-        result = ''.join([algorithm.decrypt(letter, key) for letter in crypto])
-        output.write(result)
+        result = [algorithm.decrypt(letter, key) for letter in crypto]
+        output.write(''.join(result))
         print('Znaleziono pasujący klucz')
 
 
@@ -89,9 +90,12 @@ def main():
             except FileNotFoundError as err:
                 print(f'Nie znaleziono pliku: \"{err.filename}\"')
                 sys.exit(3)
-            except (AssertionError, ValueError) as err:
+            except ValueError as err:
                 print(f'Zły format klucza: \"{err}\"')
                 sys.exit(4)
+            except AssertionError:
+                print('Nie udało się jednoznacznie rozszyfrować')
+                sys.exit(5)
     except getopt.GetoptError as err:
         print(err)
         sys.exit(1)
