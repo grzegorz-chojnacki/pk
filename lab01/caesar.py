@@ -7,10 +7,8 @@ def key_range():
 
 def parse_key(key_str):
     key = int(key_str)
-    if key not in key_range():
-        raise Exception()
-    else:
-        return key
+    assert key in key_range(), key_str
+    return key
 
 
 def encrypt(letter, key_str):

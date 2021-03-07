@@ -75,8 +75,11 @@ def main():
             try:
                 operation(algorithm)
             except FileNotFoundError as err:
-                print(f'Nie znaleziono pliku \"{err.filename}\"')
+                print(f'Nie znaleziono pliku: \"{err.filename}\"')
                 sys.exit(3)
+            except (AssertionError, ValueError) as err:
+                print(f'Zły format klucza: \"{err}\"')
+                sys.exit(4)
     except getopt.GetoptError as err:
         print(err)
         sys.exit(1)

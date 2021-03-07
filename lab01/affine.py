@@ -14,10 +14,8 @@ def parse_key(key_str):
     a, b = key_str.split()
     a = caesar.parse_key(a)
     b = int(b)
-    if math.gcd(a, ALPHABET_SIZE) == 1:
-        return a, b
-    else:
-        raise Exception()
+    assert math.gcd(a, ALPHABET_SIZE) == 1, key_str
+    return a, b
 
 
 def encrypt(letter, key_str):
