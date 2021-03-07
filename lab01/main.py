@@ -14,6 +14,7 @@ File = {
     'key_found': 'key-found.txt',
 }
 
+TRANSLATION_TABLE = str.maketrans('ąćęłńóśźżĄĆĘŁŃÓŚŹŻ', "acelnoszzACELNOSZZ")
 
 def write_algorithm_output(algorithm, key, output, text):
     result = [algorithm(letter, key) for letter in text]
@@ -25,7 +26,8 @@ def transform(method, algorithm, input_file, output_file):
           open(File['key']) as key,
           open(output_file, 'w') as output):
         key = method.parse_key(key.read().strip())
-        write_algorithm_output(algorithm, key, output, text.read())
+        text = text.read().strip().translate(TRANSLATION_TABLE)
+        write_algorithm_output(algorithm, key, output, text)
 
 
 def encryption(method):
