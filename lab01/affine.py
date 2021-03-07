@@ -14,7 +14,7 @@ def parse_key(key_str):
     a, b = key_str.split()
     a = caesar.parse_key(a)
     b = int(b)
-    assert math.gcd(a, ALPHABET_SIZE) == 1, key_str
+    if not math.gcd(a, ALPHABET_SIZE) == 1: raise ValueError(key_str)
     return a, b
 
 

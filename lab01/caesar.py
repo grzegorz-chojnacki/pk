@@ -7,7 +7,7 @@ def key_range():
 
 def parse_key(key_str):
     key = int(key_str)
-    assert key in key_range(), key_str
+    if not key in key_range(): raise ValueError(key_str)
     return key
 
 
