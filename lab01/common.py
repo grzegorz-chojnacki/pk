@@ -1,12 +1,3 @@
-File = {
-    'plain':     'plain.txt',
-    'crypto':    'crypto.txt',
-    'decrypt':   'decrypt.txt',
-    'key':       'key.txt',
-    'extra':     'extra.txt',
-    'key_found': 'key-found.txt',
-}
-
 ALPHABET_SIZE = 26
 
 

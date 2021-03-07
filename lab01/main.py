@@ -4,11 +4,21 @@ import sys
 import math
 import caesar
 import affine
-from common import File
+
+File = {
+    'plain':     'plain.txt',
+    'crypto':    'crypto.txt',
+    'decrypt':   'decrypt.txt',
+    'key':       'key.txt',
+    'extra':     'extra.txt',
+    'key_found': 'key-found.txt',
+}
 
 
 def transform(method, input_file, output_file):
-    with open(File[input_file]) as text, open(File['key']) as key, open(File[output_file], 'w') as output:
+    with (open(File[input_file]) as text,
+          open(File['key']) as key,
+          open(File[output_file], 'w') as output):
         key_str = next(key)
         result = ''.join([method(letter, key_str)
                           for letter in text.read()])
@@ -27,7 +37,8 @@ def decrypt(algorithm):
 
 
 def brute_force(algorithm):
-    with open(File['crypto']) as crypto, open(File['decrypt'], 'w') as output:
+    with (open(File['crypto']) as crypto,
+          open(File['decrypt'], 'w') as output):
         crypto = crypto.read()
         for key in algorithm.key_range():
             result = ''.join([algorithm.decrypt(letter, key)
@@ -39,7 +50,10 @@ def brute_force(algorithm):
 
 
 def find_key(algorithm):
-    with open(File['crypto']) as crypto, open(File['extra']) as extra, open(File['decrypt'], 'w') as output, open(File['key_found'], 'w') as key_found:
+    with (open(File['crypto']) as crypto,
+          open(File['extra']) as extra,
+          open(File['decrypt'], 'w') as output,
+          open(File['key_found'], 'w') as key_found):
         crypto = crypto.read()
         extra = extra.read()
         keys = [algorithm.find_key(pair) for pair in zip(extra, crypto)]
