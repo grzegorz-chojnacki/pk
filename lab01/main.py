@@ -56,9 +56,12 @@ def find_key(method):
           open(File['key_found'], 'w') as key_found):
         crypto = crypto.read().strip()
         extra = extra.read().strip()
-        keys = set.intersection(*[method.find_key(pair)
-                                  for pair in zip(extra, crypto)])
-        assert len(keys) == 1
+
+        pair = zip(extra, crypto)
+        keys = set(method.find_key(next(pair)))
+        while len(keys) > 1:
+            keys = set.intersection(method.find_key(next(pair)), keys)
+
         key = keys.pop()
         key_found.write(method.key_str(key))
         write_algorithm_output(method.decrypt, key, output, crypto)
@@ -97,7 +100,7 @@ def main():
     except ValueError as err:
         print(f'Zły format klucza: \"{err}\"')
         sys.exit(4)
-    except AssertionError:
+    except StopIteration:
         print('Nie udało się jednoznacznie rozszyfrować')
         sys.exit(5)
 
