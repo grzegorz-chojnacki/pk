@@ -99,6 +99,15 @@ class Affine:
         else:
             return letter
 
+    @staticmethod
+    def find_key(pair):
+        e, c = pair
+        result = set()
+        for key in Affine.key_range():
+            if Affine.encrypt(e, key) == c:
+                result.add(key)
+        return result
+
 
 def transform(method, input_file, output_file):
     with open(File[input_file]) as text, open(File['key']) as key, open(File[output_file], 'w') as output:
@@ -124,17 +133,30 @@ def decrypt(algorithm):
 
 
 def brute_force(algorithm):
-    with open(File['crypto']) as text, open(File['decrypt'], 'w') as output:
-        text = text.read()
+    with open(File['crypto']) as crypto, open(File['decrypt'], 'w') as output:
+        crypto = crypto.read()
         try:
             for key in algorithm.key_range():
                 result = ''.join([algorithm.decrypt(letter, key)
-                                  for letter in text])
+                                  for letter in crypto])
                 output.write(f'### Key: {key}\n')
                 output.write(result)
                 output.write('\n')
             print('Zakończono odszyfrowywanie')
-            return True
+        except FileNotFoundError as err:
+            print(f'Nie znaleziono pliku \"{err.filename}\"')
+            sys.exit(2)
+
+def find_key(algorithm):
+    with open(File['crypto']) as crypto, open(File['extra']) as extra, open(File['decrypt'], 'w') as output, open(File['key_found'], 'w') as key_found:
+        crypto = crypto.read()
+        extra  = extra.read()
+        try:
+            keys = [algorithm.find_key(pair) for pair in zip(extra, crypto)]
+            key = set.intersection(*keys).pop()
+            key_found.write(key)
+            result = ''.join([algorithm.decrypt(letter, key) for letter in crypto])
+            output.write(result)
         except FileNotFoundError as err:
             print(f'Nie znaleziono pliku \"{err.filename}\"')
             sys.exit(2)
@@ -154,7 +176,7 @@ def main():
             elif o == '-d':
                 operation = decrypt
             elif o == '-j':
-                pass
+                operation = find_key
             elif o == '-k':
                 operation = brute_force
 
