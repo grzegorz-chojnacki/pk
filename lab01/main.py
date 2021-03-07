@@ -28,12 +28,12 @@ def transform(method, algorithm, input_file, output_file):
         write_algorithm_output(algorithm, key, output, text.read())
 
 
-def encrypt(method):
+def encryption(method):
     transform(method, method.encrypt, File['plain'], File['crypto'])
     print('Poprawnie zaszyfrowano')
 
 
-def decrypt(method):
+def decryption(method):
     transform(method, method.decrypt, File['crypto'], File['decrypt'])
     print('Poprawnie odszyfrowano')
 
@@ -49,7 +49,7 @@ def brute_force(method):
         print('Zakończono odszyfrowywanie')
 
 
-def find_key(method):
+def key_search(method):
     with (open(File['crypto']) as crypto,
           open(File['extra']) as extra,
           open(File['decrypt'], 'w') as output,
@@ -78,11 +78,11 @@ def main():
             elif o == '-a':
                 method = affine
             elif o == '-e':
-                operation = encrypt
+                operation = encryption
             elif o == '-d':
-                operation = decrypt
+                operation = decryption
             elif o == '-j':
-                operation = find_key
+                operation = key_search
             elif o == '-k':
                 operation = brute_force
 
