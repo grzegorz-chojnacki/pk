@@ -15,13 +15,17 @@ File = {
 }
 
 
+def write_algorithm_output(algorithm, key, output, text):
+    result = [algorithm(letter, key) for letter in text]
+    output.write(''.join(result))
+
+
 def transform(method, algorithm, input_file, output_file):
     with (open(input_file) as text,
           open(File['key']) as key,
           open(output_file, 'w') as output):
         key = method.parse_key(key.read().strip())
-        result = [algorithm(letter, key) for letter in text.read()]
-        output.write(''.join(result))
+        write_algorithm_output(algorithm, key, output, text.read())
 
 
 def encrypt(method):
@@ -39,9 +43,8 @@ def brute_force(method):
           open(File['decrypt'], 'w') as output):
         crypto = crypto.read().strip()
         for key in method.key_range():
-            result = [method.decrypt(letter, key) for letter in crypto]
             output.write(f'### Key: {key}\n')
-            output.write(''.join(result))
+            write_algorithm_output(method.decrypt, key, output, crypto)
             output.write('\n\n')
         print('Zakończono odszyfrowywanie')
 
@@ -58,8 +61,7 @@ def find_key(method):
         assert len(keys) == 1
         key = keys.pop()
         key_found.write(method.key_str(key))
-        result = [method.decrypt(letter, key) for letter in crypto]
-        output.write(''.join(result))
+        write_algorithm_output(method.decrypt, key, output, crypto)
         print('Znaleziono pasujący klucz')
 
 
