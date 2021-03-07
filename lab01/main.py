@@ -57,6 +57,14 @@ class Caesar:
         else:
             return letter
 
+    @staticmethod
+    def find_key(pair):
+        e, c = pair
+        result = set()
+        for key in Caesar.key_range():
+            if Caesar.encrypt(e, key) == c:
+                result.add(str(key))
+        return result
 
 class Affine:
     @staticmethod
