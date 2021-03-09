@@ -54,19 +54,24 @@ def brute_force(method):
 def key_search(method):
     with (open(File['crypto']) as crypto,
           open(File['extra']) as extra,
-          open(File['decrypt'], 'w') as output,
+          open(File['decrypt'], 'w+') as output,
           open(File['key_found'], 'w') as key_found):
         crypto = crypto.read().strip()
-        extra = extra.read().strip()
+        extra = extra.read().strip().translate(TRANSLATION_TABLE)
 
         pair = zip(extra, crypto)
         keys = set(method.find_key(next(pair)))
         while len(keys) > 1:
-            keys = set.intersection(method.find_key(next(pair)), keys)
+            keys.intersection_update(method.find_key(next(pair)))
 
         key = keys.pop()
         key_found.write(method.key_str(key))
         write_algorithm_output(method.decrypt, key, output, crypto)
+
+        # Check if decrypted text matches extra
+        output.seek(0)
+        for e, o in zip(extra, output.read()):
+            assert e == o
         print('Znaleziono pasujący klucz')
 
 
@@ -102,8 +107,8 @@ def main():
     except ValueError as err:
         print(f'Zły format klucza: \"{err}\"')
         sys.exit(4)
-    except StopIteration:
-        print('Nie udało się jednoznacznie rozszyfrować')
+    except (StopIteration, AssertionError):
+        print('Nie udało się jednoznacznie odszyfrować')
         sys.exit(5)
 
 
