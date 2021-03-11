@@ -9,9 +9,17 @@ import math
 
 KEY_LENGTH = 64
 
+File = {
+    'orig':    'orig.txt',
+    'plain':   'plain.txt',
+    'crypto':  'crypto.txt',
+    'decrypt': 'decrypt.txt',
+    'key':     'key.txt',
+}
+
 
 def prepare():
-    with open('orig.txt') as orig, open('plain.txt', 'w') as plain:
+    with open(File['orig']) as orig, open(File['plain'], 'w') as plain:
         line_counter = 0
         for ch in orig.read().replace('\n', ''):
             plain.write(ch)
@@ -20,8 +28,21 @@ def prepare():
                 plain.write('\n')
 
 
+def xor(line, key):
+    crypto = [ord(l) ^ ord(k) for l, k in zip(line, key)]
+    return ''.join(map(chr, crypto))
+
+
 def encrypt():
-    pass
+    with (open(File['plain']) as plain,
+          open(File['key']) as key,
+          open(File['crypto'], 'w') as crypto):
+        key = key.readline().strip()
+        assert len(key) == KEY_LENGTH
+        for line in plain.readlines():
+            line = line.strip().ljust(KEY_LENGTH)
+            assert len(line) == KEY_LENGTH
+            crypto.write(xor(line, key))
 
 
 def analyse():
