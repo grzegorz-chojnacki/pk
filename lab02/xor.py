@@ -18,6 +18,11 @@ File = {
 }
 
 
+def chunks(text, n):
+    for i in range(0, len(text), n):
+        yield text[i:i + n]
+
+
 def prepare():
     with open(File['orig']) as orig, open(File['plain'], 'w') as plain:
         line_counter = 0
@@ -40,13 +45,23 @@ def encrypt():
         key = key.readline().strip()
         assert len(key) == KEY_LENGTH
         for line in plain.readlines():
-            line = line.strip().ljust(KEY_LENGTH)
+            line = line[:-1].ljust(KEY_LENGTH)
             assert len(line) == KEY_LENGTH
             crypto.write(xor(line, key))
 
 
-def analyse():
+def crack(bytes):
     pass
+
+
+def analyse():
+    with (open(File['crypto'], 'rb') as crypto,
+          open(File['decrypt'], 'w') as decrypt):
+        crypto = list(chunks(crypto.read(), KEY_LENGTH))
+        assert len(crypto[-1]) == KEY_LENGTH
+        for column in zip(*crypto):
+            crack(column)
+
 
 
 def main():
