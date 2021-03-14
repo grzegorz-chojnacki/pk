@@ -47,16 +47,6 @@ def xor(line, key):
     return ''.join(crypto)
 
 
-def crack(bytes):
-    spaces = set()
-    for pair in space_pairs(bytes):
-        if len(spaces) != 0:
-            space = spaces.intersection(pair).pop()
-            return chr(space ^ ord(' '))
-        spaces = spaces.union(pair)
-    return ZERO
-
-
 def space_pairs(bytes):
     return filter(is_space_pair, combinations(set(bytes), 2))
 
@@ -71,11 +61,10 @@ def analyse():
           open(File['decrypt'], 'w') as decrypt):
         crypto = list(chunks(crypto.read(), KEY_LENGTH))
         assert len(crypto[-1]) == KEY_LENGTH  # only last line can be shorter
-        key = ''.join(crack(column) for column in zip(*crypto))
 
+        key = ''.join(crack(column) for column in zip(*crypto))
         for line in to_text(crypto):
             decrypt.write(printable_line(xor(line, key)))
-
         return key
 
 
@@ -84,13 +73,22 @@ def chunks(text, n):
         yield text[i:i + n]
 
 
+def crack(bytes):
+    spaces = set()
+    for pair in space_pairs(bytes):
+        if len(spaces) != 0:
+            space = spaces.intersection(pair).pop()
+            return chr(space ^ ord(' '))
+        spaces = spaces.union(pair)
+    return ZERO
+
+
 def to_text(bytes):
     return map(lambda line: map(chr, line), bytes)
 
 
 def printable_line(line):
-    cleaned = (c if c.isprintable() else '_' for c in line)
-    return ''.join(cleaned) + '\n'
+    return ''.join(c if c.isprintable() else '_' for c in line) + '\n'
 
 
 def main():
@@ -108,11 +106,11 @@ def main():
             print('Zakończono szyfrowanie')
         elif opt == '-k':
             key = analyse()
-            key_t = 'częściowy' if ZERO in key else 'pełny'
-            print(f'Znaleziono {key_t} klucz: "{key.replace(ZERO, "_")}"')
+            print(f'Znaleziono klucz: "{key.replace(ZERO, "_")}"')
             print('Zakończono odszyfrowywanie')
         else:
             raise getopt.GetoptError('')
+
     except getopt.GetoptError:
         print(f'użycie: {sys.argv[0]} -[ekp]')
         sys.exit(1)
