@@ -6,6 +6,7 @@
 import getopt
 import sys
 import math
+import itertools as it
 
 KEY_LENGTH = 64
 
@@ -16,6 +17,8 @@ File = {
     'decrypt': 'decrypt.txt',
     'key':     'key.txt',
 }
+
+ZERO = '\x00'
 
 
 def chunks(text, n):
@@ -50,8 +53,21 @@ def encrypt():
             crypto.write(xor(line, key))
 
 
+def maybe_space(b1, b2):
+    return 0b010_00000 < b1 ^ b2 < 0b010_111111
+
+
 def crack(bytes):
-    pass
+    spaces = set()
+    for pair in it.combinations(set(bytes), 2):
+        if maybe_space(*pair):
+            if len(spaces) > 0:
+                space = spaces.intersection(pair).pop()
+                return chr(space ^ ord(' '))
+            else:
+                spaces = spaces.union(pair)
+    else:
+        return ZERO
 
 
 def analyse():
