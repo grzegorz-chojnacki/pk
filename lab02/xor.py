@@ -9,6 +9,7 @@ import math
 from itertools import combinations
 
 KEY_LENGTH = 64
+ZERO = '\x00'
 
 File = {
     'orig':    'orig.txt',
@@ -18,14 +19,12 @@ File = {
     'key':     'key.txt',
 }
 
-ZERO = '\x00'
-
 
 def prepare():
     with open(File['orig']) as orig, open(File['plain'], 'w') as plain:
         written = 0
         for ch in orig.read().replace('\n', ''):
-            plain.write(ch)
+            plain.write(ch.lower())
             written += 1
             if (written % KEY_LENGTH == 0):
                 plain.write('\n')
@@ -38,15 +37,14 @@ def encrypt():
         key = key.readline().strip()
         assert len(key) == KEY_LENGTH
         for line in plain.readlines():
-            # Strip '\n' and pad with spaces to KEY_LENGTH
-            line = line[:-1].ljust(KEY_LENGTH)
+            line = line.replace('\n', '').ljust(KEY_LENGTH)
             assert len(line) == KEY_LENGTH
             crypto.write(xor(line, key))
 
 
 def xor(line, key):
-    crypto = [ord(l) ^ ord(k) for l, k in zip(line, key)]
-    return ''.join(map(chr, crypto))
+    crypto = (chr(ord(l) ^ ord(k)) for l, k in zip(line, key))
+    return ''.join(crypto)
 
 
 def crack(bytes):
@@ -72,11 +70,11 @@ def analyse():
     with (open(File['crypto'], 'rb') as crypto,
           open(File['decrypt'], 'w') as decrypt):
         crypto = list(chunks(crypto.read(), KEY_LENGTH))
-        assert len(crypto[-1]) == KEY_LENGTH
+        assert len(crypto[-1]) == KEY_LENGTH  # only last line can be shorter
         key = ''.join(crack(column) for column in zip(*crypto))
 
         for line in to_text(crypto):
-            decrypt.write(xor(line, key) + '\n')
+            decrypt.write(printable_line(xor(line, key)))
 
         return key
 
@@ -90,27 +88,39 @@ def to_text(bytes):
     return map(lambda line: map(chr, line), bytes)
 
 
+def printable_line(line):
+    cleaned = (c if c.isprintable() else '_' for c in line)
+    return ''.join(cleaned) + '\n'
+
+
 def main():
     try:
         opts, _ = getopt.getopt(sys.argv[1:], 'pek')
-        for o, _ in opts:
-            if o == '-p':
-                prepare()
-                print('Zakończono przygotowywanie')
-            elif o == '-e':
-                encrypt()
-                print('Zakończono szyfrowanie')
-            elif o == '-k':
-                key = analyse()
-                key_type = 'częściowy' if ZERO in key else 'pełny'
-                print(f'Znaleziono {key_type} klucz: "{key.replace(ZERO, "_")}"')
-                print('Zakończono odszyfrowywanie')
+        if len(opts) != 1:
+            raise getopt.GetoptError('')
 
-    except getopt.GetoptError as err:
-        print(err)
-        sys.exit(2)
+        opt, _ = opts[0]
+        if opt == '-p':
+            prepare()
+            print('Zakończono przygotowywanie')
+        elif opt == '-e':
+            encrypt()
+            print('Zakończono szyfrowanie')
+        elif opt == '-k':
+            key = analyse()
+            key_t = 'częściowy' if ZERO in key else 'pełny'
+            print(f'Znaleziono {key_t} klucz: "{key.replace(ZERO, "_")}"')
+            print('Zakończono odszyfrowywanie')
+        else:
+            raise getopt.GetoptError('')
+    except getopt.GetoptError:
+        print(f'użycie: {sys.argv[0]} -[ekp]')
+        sys.exit(1)
     except FileNotFoundError as err:
-        print(f'Nie znaleziono pliku: \"{err.filename}\"')
+        print(f'Nie znaleziono pliku: "{err.filename}"')
+        sys.exit(2)
+    except AssertionError:
+        print(f'Długość klucza/linii inna niż {KEY_LENGTH}')
         sys.exit(3)
 
 
