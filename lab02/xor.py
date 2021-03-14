@@ -6,7 +6,7 @@
 import getopt
 import sys
 import math
-import itertools as it
+from itertools import combinations
 
 KEY_LENGTH = 64
 
@@ -21,24 +21,14 @@ File = {
 ZERO = '\x00'
 
 
-def chunks(text, n):
-    for i in range(0, len(text), n):
-        yield text[i:i + n]
-
-
 def prepare():
     with open(File['orig']) as orig, open(File['plain'], 'w') as plain:
-        line_counter = 0
+        written = 0
         for ch in orig.read().replace('\n', ''):
             plain.write(ch)
-            line_counter += 1
-            if (line_counter % KEY_LENGTH == 0):
+            written += 1
+            if (written % KEY_LENGTH == 0):
                 plain.write('\n')
-
-
-def xor(line, key):
-    crypto = [ord(l) ^ ord(k) for l, k in zip(line, key)]
-    return ''.join(map(chr, crypto))
 
 
 def encrypt():
@@ -48,26 +38,34 @@ def encrypt():
         key = key.readline().strip()
         assert len(key) == KEY_LENGTH
         for line in plain.readlines():
+            # Strip '\n' and pad with spaces to KEY_LENGTH
             line = line[:-1].ljust(KEY_LENGTH)
             assert len(line) == KEY_LENGTH
             crypto.write(xor(line, key))
 
 
-def maybe_space(b1, b2):
-    return 0b010_00000 < b1 ^ b2 < 0b010_111111
+def xor(line, key):
+    crypto = [ord(l) ^ ord(k) for l, k in zip(line, key)]
+    return ''.join(map(chr, crypto))
 
 
 def crack(bytes):
     spaces = set()
-    for pair in it.combinations(set(bytes), 2):
-        if maybe_space(*pair):
-            if len(spaces) > 0:
-                space = spaces.intersection(pair).pop()
-                return chr(space ^ ord(' '))
-            else:
-                spaces = spaces.union(pair)
-    else:
-        return ZERO
+    for pair in space_pairs(bytes):
+        if len(spaces) != 0:
+            space = spaces.intersection(pair).pop()
+            return chr(space ^ ord(' '))
+        spaces = spaces.union(pair)
+    return ZERO
+
+
+def space_pairs(bytes):
+    return filter(is_space_pair, combinations(set(bytes), 2))
+
+
+def is_space_pair(pair):
+    b1, b2 = pair
+    return 0b_010_00000 < b1 ^ b2 < 0b_010_111111
 
 
 def analyse():
@@ -77,14 +75,19 @@ def analyse():
         assert len(crypto[-1]) == KEY_LENGTH
         key = ''.join(crack(column) for column in zip(*crypto))
 
-        if ZERO not in key:
-            print('Znaleziono pełny klucz:')
-        else:
-            print('Znaleziono niepełny klucz:')
-        print(key.replace(ZERO, '_'))
-
-        for line in map(lambda line: map(chr, line), crypto):
+        for line in to_text(crypto):
             decrypt.write(xor(line, key) + '\n')
+
+        return key
+
+
+def chunks(text, n):
+    for i in range(0, len(text), n):
+        yield text[i:i + n]
+
+
+def to_text(bytes):
+    return map(lambda line: map(chr, line), bytes)
 
 
 def main():
@@ -93,10 +96,15 @@ def main():
         for o, _ in opts:
             if o == '-p':
                 prepare()
+                print('Zakończono przygotowywanie')
             elif o == '-e':
                 encrypt()
+                print('Zakończono szyfrowanie')
             elif o == '-k':
-                analyse()
+                key = analyse()
+                key_type = 'częściowy' if ZERO in key else 'pełny'
+                print(f'Znaleziono {key_type} klucz: "{key.replace(ZERO, "_")}"')
+                print('Zakończono odszyfrowywanie')
 
     except getopt.GetoptError as err:
         print(err)
