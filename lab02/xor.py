@@ -75,9 +75,16 @@ def analyse():
           open(File['decrypt'], 'w') as decrypt):
         crypto = list(chunks(crypto.read(), KEY_LENGTH))
         assert len(crypto[-1]) == KEY_LENGTH
-        for column in zip(*crypto):
-            crack(column)
+        key = ''.join(crack(column) for column in zip(*crypto))
 
+        if ZERO not in key:
+            print('Znaleziono pełny klucz:')
+        else:
+            print('Znaleziono niepełny klucz:')
+        print(key.replace(ZERO, '_'))
+
+        for line in map(lambda line: map(chr, line), crypto):
+            decrypt.write(xor(line, key) + '\n')
 
 
 def main():
