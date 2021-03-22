@@ -52,15 +52,6 @@ def xor(line, key):
     return ''.join(crypto)
 
 
-def space_pairs(bytes):
-    return filter(is_space_pair, combinations(set(bytes), 2))
-
-
-def is_space_pair(pair):
-    b1, b2 = pair
-    return 0b_010_00000 < b1 ^ b2 < 0b_010_111111
-
-
 def analyse():
     with (open(File['crypto'], 'rb') as crypto,
           open(File['decrypt'], 'w') as decrypt):
@@ -81,11 +72,20 @@ def chunks(text, n):
 def crack(bytes):
     spaces = set()
     for pair in space_pairs(bytes):
-        if len(spaces) != 0:
+        if len(spaces) > 0:
             space = spaces.intersection(pair).pop()
             return chr(space ^ ord(' '))
-        spaces = spaces.union(pair)
+        spaces = set(pair)
     return ZERO
+
+
+def space_pairs(bytes):
+    return filter(is_space_pair, combinations(set(bytes), 2))
+
+
+def is_space_pair(pair):
+    b1, b2 = pair
+    return 0b_010_00000 < b1 ^ b2 < 0b_010_111111
 
 
 def to_text(bytes):
