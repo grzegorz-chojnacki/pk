@@ -1,13 +1,15 @@
 #!/usr/bin/env python3
 #
 # Autorem skryptu jest Grzegorz Chojnacki
+# Skrypt został sprawdzony na wersji pythona 3.9.2
 #
 
 import getopt
 import sys
-import math
 from itertools import combinations
 
+TRANSLATION_TABLE = str.maketrans('ąćęłńóśźżĄĆĘŁŃÓŚŹŻ', 'acelnoszzACELNOSZZ')
+ALLOWED_CHARACTERS = set(' abcdefghijklmnopqrstuvwxyz')
 KEY_LENGTH = 64
 ZERO = '\x00'
 
@@ -22,11 +24,14 @@ File = {
 
 def prepare():
     with open(File['orig']) as orig, open(File['plain'], 'w') as plain:
+        text = orig.read().replace('\n', '').translate(TRANSLATION_TABLE).lower()
         written = 0
-        for ch in orig.read().replace('\n', ''):
-            plain.write(ch.lower())
+        for ch in text:
+            if ch not in ALLOWED_CHARACTERS:
+                raise SyntaxError(ch)
+            plain.write(ch)
             written += 1
-            if (written % KEY_LENGTH == 0):
+            if written % KEY_LENGTH == 0:
                 plain.write('\n')
 
 
@@ -120,6 +125,9 @@ def main():
     except AssertionError:
         print(f'Długość klucza/linii inna niż {KEY_LENGTH}')
         sys.exit(3)
+    except SyntaxError as err:
+        print(f'W pliku występuje niedozwolony symbol: "{err.args[0]}"')
+        sys.exit(4)
 
 
 if __name__ == "__main__":
