@@ -10,28 +10,30 @@ import sys
 BLOCK_WIDTH = 4
 BLOCK_HEIGHT = 3
 
-IMAGE_SIZE = None
-
 File = {
     'key':   'key.txt',
     'plain': 'plain.bmp',
     'ecb':   'ecb_crypto.bmp',
-    'cbc':   'cbc_crypto.bmp',
+    'cbc':   'cbc_crypto.bmp'
 }
+
+
+def encrypt_image(algorithm, key):
+    file_path = File[algorithm.__name__]
+    with Image.open(File['plain']) as image:
+        blocks = blockify(image)
+        save_image_blocks(algorithm(blocks, key), image.size, file_path)
+
+
+def blockify(image):
+    image = image.crop(adjust_size(image.size))
+    return [[image.getpixel(pixel) for pixel in block]
+            for block in block_iterator(image.size)]
 
 
 def adjust_size(size):
     (width, height) = size
     return (0, 0, width - (width % BLOCK_WIDTH), height - (height % BLOCK_HEIGHT))
-
-
-def load_image_blocks():
-    global IMAGE_SIZE
-    with Image.open(File['plain']) as image:
-        image = image.crop(adjust_size(image.size))
-        IMAGE_SIZE = image.size
-        return [[image.getpixel(pixel) for pixel in block]
-                for block in block_iterator(image.size)]
 
 
 def block_iterator(size):
@@ -56,11 +58,11 @@ def cbc(blocks, key):
     return blocks
 
 
-def save_image_blocks(blocks, file_path):
+def save_image_blocks(blocks, size, file_path):
     with open(file_path, 'wb') as output:
-        image = Image.new('RGB', IMAGE_SIZE)
+        image = Image.new('RGB', size)
 
-        for block, coords in zip(blocks, block_iterator(IMAGE_SIZE)):
+        for block, coords in zip(blocks, block_iterator(size)):
             for pixel, coord in zip(block, coords):
                 image.putpixel(coord, pixel)
         image.save(output)
@@ -68,10 +70,9 @@ def save_image_blocks(blocks, file_path):
 
 def main():
     try:
-        blocks = load_image_blocks()
         key = get_key()
-        save_image_blocks(ecb(blocks, key), File['ecb'])
-        save_image_blocks(cbc(blocks, key), File['ecb'])
+        encrypt_image(ecb, key)
+        # encrypt_image(cbc, key)
     except FileNotFoundError as err:
         print(f'Nie znaleziono pliku: "{err.filename}"')
         sys.exit(1)
