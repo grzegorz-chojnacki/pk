@@ -14,16 +14,14 @@ BLOCK_WIDTH = 4
 BLOCK_HEIGHT = 4
 
 
+def encrypt(pixel, key):
+    (r, g, b) = pixel
+    return (r ^ key, g ^ key, b ^ key)
+
 def ecb(blocks, key):
     it = cycle(md5(key.encode('utf-8')).digest())
-
-    def encrypt(p, k):
-        (r,g,b) = p
-        return (r ^ k, g ^ k, b ^ k)
-
-    result = [[encrypt(pixel, next(it)) for pixel in block] for block in blocks]
-    return result
-
+    for block in blocks:
+        yield [encrypt(pixel, next(it)) for pixel in block]
 
 def cbc(blocks, key):
     return blocks
