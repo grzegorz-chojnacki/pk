@@ -4,68 +4,41 @@
 # Skrypt został sprawdzony na wersji pythona 3.9.2
 #
 
-from PIL import Image
 import sys
+import itertools as it
+from itertools import cycle
+from hashlib import md5
+from PIL import Image
 
 BLOCK_WIDTH = 4
-BLOCK_HEIGHT = 3
-
-File = {
-    'key':   'key.txt',
-    'plain': 'plain.bmp',
-    'ecb':   'ecb_crypto.bmp',
-    'cbc':   'cbc_crypto.bmp'
-}
-
-
-def encrypt_image(algorithm, key):
-    file_path = File[algorithm.__name__]
-    with Image.open(File['plain']) as image:
-        blocks = blockify(image)
-        save_image_blocks(algorithm(blocks, key), image.size, file_path)
-
-
-def blockify(image):
-    image = image.crop(adjust_size(image.size))
-    return [[image.getpixel(pixel) for pixel in block]
-            for block in block_iterator(image.size)]
-
-
-def adjust_size(size):
-    (width, height) = size
-    return (0, 0, width - (width % BLOCK_WIDTH), height - (height % BLOCK_HEIGHT))
-
-
-def block_iterator(size):
-    (width, height) = size
-    return (make_block(x, y) for x in range(0, width, BLOCK_WIDTH) for y in range(0, height, BLOCK_HEIGHT))
-
-
-def make_block(x0, y0):
-    return [(x0 + dx, y0 + dy) for dx in range(BLOCK_WIDTH) for dy in range(BLOCK_HEIGHT)]
-
-
-# ToDo: load key from file
-def get_key():
-    return 0
+BLOCK_HEIGHT = 4
 
 
 def ecb(blocks, key):
-    return blocks
+    it = cycle(md5(key.encode('utf-8')).digest())
+
+    def encrypt(p, k):
+        (r,g,b) = p
+        return (r ^ k, g ^ k, b ^ k)
+
+    result = [[encrypt(pixel, next(it)) for pixel in block] for block in blocks]
+    return result
 
 
 def cbc(blocks, key):
     return blocks
 
 
-def save_image_blocks(blocks, size, file_path):
-    with open(file_path, 'wb') as output:
-        image = Image.new('RGB', size)
+def rgb_to_bw(pixel):
+    return chr(sum(pixel) // 3).encode('utf-8')
 
-        for block, coords in zip(blocks, block_iterator(size)):
-            for pixel, coord in zip(block, coords):
-                image.putpixel(coord, pixel)
-        image.save(output)
+
+File = {
+    'key':   'key.txt',
+    'plain': 'plain.bmp',
+    ecb:     'ecb_crypto.bmp',
+    cbc:     'cbc_crypto.bmp'
+}
 
 
 def main():
@@ -76,6 +49,49 @@ def main():
     except FileNotFoundError as err:
         print(f'Nie znaleziono pliku: "{err.filename}"')
         sys.exit(1)
+
+
+def get_key():
+    return 'bgfi8nm4DCZ3wOxW4UfYDvFJsnHd4PJ7'
+
+
+def encrypt_image(algorithm, key):
+    with Image.open(File['plain']) as image:
+        image = image.crop(adjusted_size(image))
+        blocks = blockify(image)
+        save_image_blocks(algorithm(blocks, key), image.size, File[algorithm])
+
+
+# (0, 0, width + (-width % BLOCK_WIDTH), height + (-height % BLOCK_HEIGHT))
+def adjusted_size(image):
+    (width, height) = image.size
+    return (0, 0, width - (width % BLOCK_WIDTH), height - (height % BLOCK_HEIGHT))
+
+
+def blockify(image):
+    return [[image.getpixel(pixel) for pixel in block]
+            for block in block_iterator(image.size)]
+
+
+def block_iterator(size):
+    (width, height) = size
+    return (make_block(x, y)
+            for x in range(0, width, BLOCK_WIDTH)
+            for y in range(0, height, BLOCK_HEIGHT))
+
+
+def make_block(x0, y0):
+    return [(x0 + dx, y0 + dy) for dx in range(BLOCK_WIDTH) for dy in range(BLOCK_HEIGHT)]
+
+
+def save_image_blocks(blocks, size, file_path):
+    with open(file_path, 'wb') as output:
+        image = Image.new('RGB', size)
+
+        for block, coords in zip(blocks, block_iterator(size)):
+            for pixel, coord in zip(block, coords):
+                image.putpixel(coord, pixel)
+        image.save(output)
 
 
 if __name__ == "__main__":
