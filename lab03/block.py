@@ -18,13 +18,20 @@ def encrypt(pixel, key):
     (r, g, b) = pixel
     return (r ^ key, g ^ key, b ^ key)
 
+
 def ecb(blocks, key):
     it = cycle(md5(key.encode('utf-8')).digest())
     for block in blocks:
         yield [encrypt(pixel, next(it)) for pixel in block]
 
+
 def cbc(blocks, key):
-    return blocks
+    prev_hash = md5(key.encode('utf-8')).digest()
+    for block in blocks:
+        block_hash = md5(str(block).encode('utf-8')).digest()
+        it = cycle(p ^ b for p, b in zip(prev_hash, block_hash))
+        prev_hash = block_hash
+        yield [encrypt(pixel, next(it)) for pixel in block]
 
 
 def rgb_to_bw(pixel):
@@ -43,7 +50,7 @@ def main():
     try:
         key = get_key()
         encrypt_image(ecb, key)
-        # encrypt_image(cbc, key)
+        encrypt_image(cbc, key)
     except FileNotFoundError as err:
         print(f'Nie znaleziono pliku: "{err.filename}"')
         sys.exit(1)
