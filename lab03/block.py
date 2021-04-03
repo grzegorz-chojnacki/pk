@@ -5,13 +5,12 @@
 #
 
 import sys
-import itertools as it
 from itertools import cycle
 from hashlib import md5
 from PIL import Image
 
 BLOCK_WIDTH = 4
-BLOCK_HEIGHT = 4
+BLOCK_HEIGHT = 3
 
 
 def encrypt(pixel, key):
@@ -20,17 +19,17 @@ def encrypt(pixel, key):
 
 
 def ecb(blocks, key):
-    it = cycle(md5(key.encode('utf-8')).digest())
+    m = md5(key.encode('utf-8'))
+    it = cycle(m.digest())
     for block in blocks:
         yield [encrypt(pixel, next(it)) for pixel in block]
 
 
 def cbc(blocks, key):
-    prev_hash = md5(key.encode('utf-8')).digest()
+    m = md5(key.encode('utf-8'))
     for block in blocks:
-        block_hash = md5(str(block).encode('utf-8')).digest()
-        it = cycle(p ^ b for p, b in zip(prev_hash, block_hash))
-        prev_hash = block_hash
+        m.update(str(block).encode('utf-8'))
+        it = cycle(m.digest())
         yield [encrypt(pixel, next(it)) for pixel in block]
 
 
