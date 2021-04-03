@@ -83,15 +83,14 @@ def load_image(file_path):
         raise WrongImageFormat
 
 
-# (0, 0, width + (-width % BLOCK_WIDTH), height + (-height % BLOCK_HEIGHT))
 def adjusted_size(image):
     (width, height) = image.size
     if (width % BLOCK_WIDTH) != 0 or (height % BLOCK_HEIGHT) != 0:
-        width -= width % BLOCK_WIDTH
-        height -= height % BLOCK_HEIGHT
+        width += -width % BLOCK_WIDTH
+        height += -height % BLOCK_HEIGHT
         print(f'Wielkość obrazu nie dzieli się równo na bloki '
               f'{BLOCK_WIDTH}x{BLOCK_HEIGHT}')
-        print(f'Zaokrąglono wymary do {width}x{height}')
+        print(f'Poszerzono wymary do {width}x{height}')
     return (0, 0, width, height)
 
 
