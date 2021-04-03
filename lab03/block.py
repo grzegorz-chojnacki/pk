@@ -25,18 +25,17 @@ def xor(pixel, key):
 
 
 def ecb(blocks, key):
-    m = hash_fn(key.encode('utf-8'))
-    it = cycle(m.digest())
+    digest = hash_fn(key.encode('utf-8')).digest()
     for block in blocks:
-        yield (xor(pixel, next(it)) for pixel in block)
+        yield (xor(*pair) for pair in zip(block, cycle(digest)))
 
 
 def cbc(blocks, key):
-    m = hash_fn(key.encode('utf-8'))
+    hasher = hash_fn(key.encode('utf-8'))
     for block in blocks:
-        m.update(str(block).encode('utf-8'))
-        it = cycle(m.digest())
-        yield (xor(pixel, next(it)) for pixel in block)
+        hasher.update(str(block).encode('utf-8'))
+        hash_byte = cycle(hasher.digest())
+        yield (xor(pixel, next(hash_byte)) for pixel in block)
 
 
 File = {
@@ -52,15 +51,15 @@ def main():
         image = load_image(sys.argv[1] if len(sys.argv) > 1 else File['plain'])
         key = get_key()
         encrypt_image(image, ecb, key)
-        print('Zakończono szyfrowanie w trybie EBC')
+        print('Zakończono szyfrowanie w trybie ECB')
         encrypt_image(image, cbc, key)
         print('Zakończono szyfrowanie w trybie CBC')
     except FileNotFoundError as err:
         print(f'Nie znaleziono pliku: "{err.filename}"')
         sys.exit(1)
     except WrongImageFormat:
-        print(f'Wystąpił błąd poczas wczytywania pliku {File["plain"]}')
-        print(f'Czy plik na pewno został zapisany w formacie .bmp?')
+        print('Wystąpił błąd podczas wczytywania pliku graficznego')
+        print('Czy plik na pewno został zapisany w formacie .bmp?')
         sys.exit(2)
 
 
@@ -76,11 +75,9 @@ def get_key():
 def load_image(file_path):
     try:
         with Image.open(file_path, formats=['BMP']) as image:
-            image = image.crop(adjusted_size(image))
-            image = image.convert('RGB')
-            return image
-    except (UnidentifiedImageError, TypeError):
-        raise WrongImageFormat
+            return image.crop(adjusted_size(image)).convert('RGB')
+    except (UnidentifiedImageError, TypeError) as err:
+        raise WrongImageFormat from err
 
 
 def adjusted_size(image):
@@ -94,9 +91,9 @@ def adjusted_size(image):
     return (0, 0, width, height)
 
 
-def encrypt_image(image, algorithm, key):
-    blocks = blockify(image)
-    save_image_blocks(algorithm(blocks, key), image.size, File[algorithm])
+def encrypt_image(image, encryption_fn, key):
+    blocks = encryption_fn(blockify(image), key)
+    save_image_blocks(blocks, image.size, File[encryption_fn])
 
 
 def blockify(image):
