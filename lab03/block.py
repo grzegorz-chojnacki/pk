@@ -5,6 +5,8 @@
 #
 
 import sys
+from string import ascii_letters, digits
+from random import sample
 from itertools import cycle
 from hashlib import md5
 from PIL import Image
@@ -22,7 +24,7 @@ def ecb(blocks, key):
     m = md5(key.encode('utf-8'))
     it = cycle(m.digest())
     for block in blocks:
-        yield [encrypt(pixel, next(it)) for pixel in block]
+        yield (encrypt(pixel, next(it)) for pixel in block)
 
 
 def cbc(blocks, key):
@@ -30,11 +32,7 @@ def cbc(blocks, key):
     for block in blocks:
         m.update(str(block).encode('utf-8'))
         it = cycle(m.digest())
-        yield [encrypt(pixel, next(it)) for pixel in block]
-
-
-def rgb_to_bw(pixel):
-    return chr(sum(pixel) // 3).encode('utf-8')
+        yield (encrypt(pixel, next(it)) for pixel in block)
 
 
 File = {
@@ -49,14 +47,21 @@ def main():
     try:
         key = get_key()
         encrypt_image(ecb, key)
+        print('Zakończono szyfrowanie w trybie EBC')
         encrypt_image(cbc, key)
+        print('Zakończono szyfrowanie w trybie CBC')
     except FileNotFoundError as err:
         print(f'Nie znaleziono pliku: "{err.filename}"')
         sys.exit(1)
 
 
 def get_key():
-    return 'bgfi8nm4DCZ3wOxW4UfYDvFJsnHd4PJ7'
+    try:
+        with open(File['key']) as key:
+            return key.readline().strip()
+    except FileNotFoundError:
+        print(f'Nie znaleziono pliku: "{File["key"]}", wybrano losowy klucz')
+        return ''.join(sample(ascii_letters + digits, 32))
 
 
 def encrypt_image(algorithm, key):
@@ -69,7 +74,13 @@ def encrypt_image(algorithm, key):
 # (0, 0, width + (-width % BLOCK_WIDTH), height + (-height % BLOCK_HEIGHT))
 def adjusted_size(image):
     (width, height) = image.size
-    return (0, 0, width - (width % BLOCK_WIDTH), height - (height % BLOCK_HEIGHT))
+    if (width % BLOCK_WIDTH) != 0 or (height % BLOCK_HEIGHT) != 0:
+        width -= width % BLOCK_WIDTH
+        height -= height % BLOCK_HEIGHT
+        print(f'Wielkość obrazu nie dzieli się równo na bloki '
+              f'{BLOCK_WIDTH}x{BLOCK_HEIGHT}')
+        print(f'Zaokrąglono wymary do {width}x{height}')
+    return (0, 0, width, height)
 
 
 def blockify(image):
@@ -100,14 +111,3 @@ def save_image_blocks(blocks, size, file_path):
 
 if __name__ == "__main__":
     main()
-
-'''
-- Wczytać obrazek
-    - Sprawdzić wymiary i wykadrować w razie co
-    - podzielić obrazek na bloki
-    - Zwrócić liste bloków
-- Wczytać opcjonalny klucz
-- Zakodować bloki za pomocą ecb i cbc
-- Spłaszczyć bloki do dobrego formatu
-- Zapisać obrazki
-'''
