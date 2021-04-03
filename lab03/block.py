@@ -45,10 +45,11 @@ File = {
 
 def main():
     try:
+        image = load_image()
         key = get_key()
-        encrypt_image(ecb, key)
+        encrypt_image(image, ecb, key)
         print('Zakończono szyfrowanie w trybie EBC')
-        encrypt_image(cbc, key)
+        encrypt_image(image, cbc, key)
         print('Zakończono szyfrowanie w trybie CBC')
     except FileNotFoundError as err:
         print(f'Nie znaleziono pliku: "{err.filename}"')
@@ -64,11 +65,14 @@ def get_key():
         return ''.join(sample(ascii_letters + digits, 32))
 
 
-def encrypt_image(algorithm, key):
+def load_image():
     with Image.open(File['plain']) as image:
-        image = image.crop(adjusted_size(image))
-        blocks = blockify(image)
-        save_image_blocks(algorithm(blocks, key), image.size, File[algorithm])
+        return image.crop(adjusted_size(image))
+
+
+def encrypt_image(image, algorithm, key):
+    blocks = blockify(image)
+    save_image_blocks(algorithm(blocks, key), image.size, File[algorithm])
 
 
 # (0, 0, width + (-width % BLOCK_WIDTH), height + (-height % BLOCK_HEIGHT))
@@ -96,7 +100,9 @@ def block_iterator(size):
 
 
 def make_block(x0, y0):
-    return [(x0 + dx, y0 + dy) for dx in range(BLOCK_WIDTH) for dy in range(BLOCK_HEIGHT)]
+    return [(x0 + dx, y0 + dy)
+            for dx in range(BLOCK_WIDTH)
+            for dy in range(BLOCK_HEIGHT)]
 
 
 def save_image_blocks(blocks, size, file_path):
