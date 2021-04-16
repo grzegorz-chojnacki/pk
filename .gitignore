@@ -1,6 +1,9 @@
 pk.md
 *.txt
 *.bmp
-!lab04/*.txt
+
+!lab04/personal?.txt
+
+*.pdf
 
 __pycache__
