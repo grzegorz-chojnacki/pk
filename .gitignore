@@ -1,5 +1,6 @@
 pk.md
 *.txt
 *.bmp
+!lab04/*.txt
 
 __pycache__
