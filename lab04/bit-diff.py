@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+#
+# Autorem skryptu jest Grzegorz Chojnacki
+# Skrypt został sprawdzony na wersji pythona 3.9.2
+#
 
 from os.path import isfile
 import subprocess as sp
