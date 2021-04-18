@@ -36,7 +36,7 @@ for file in File.values():
         print(f'Nie znaleziono pliku "{file}"')
         exit(1)
 
-with open('hash.txt', 'w') as out:
+with open('diff.txt', 'w') as out:
     for fn in fns:
         sumA = checksum_pdf(File['A'], fn, out)
         sumB = checksum_pdf(File['B'], fn, out)
