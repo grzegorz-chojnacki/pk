@@ -6,16 +6,25 @@
 
 import getopt
 import sys
-from itertools import combinations
+import random as r
+
+
+def write_key_tuple(filename, key_tuple):
+    p, g, key = key_tuple
+    with open(filename, 'w') as out:
+        out.write(f'{p}\n')
+        out.write(f'{g}\n')
+        out.write(f'{key}\n')
 
 
 def generate_keys():
     with open('elgamal.txt') as elgamal:
         p = int(elgamal.readline())
         g = int(elgamal.readline())
-
-    with open('public.txt', 'w') as public, open('private.txt', 'w') as private:
-        pass
+        private_key = r.randint(1, p - 1)
+        public_key = pow(g, private_key, p)
+        write_key_tuple('public.txt', (p, g, public_key))
+        write_key_tuple('private.txt', (p, g, private_key))
 
 
 def encrypt():
