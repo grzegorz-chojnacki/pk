@@ -29,16 +29,33 @@ def generate_keys():
 
 def encrypt():
     with open('public.txt') as public, open('plain.txt') as plain:
-        pass
+        p = int(public.readline())
+        g = int(public.readline())
+        public_key = int(public.readline())
+        msg = int(plain.readline())
+
+        assert msg < p
+        encryption_key = r.randint(1, p - 1)
+
     with open('crypto.txt', 'w') as crypto:
-        pass
+        crypto.write(f'{pow(g, encryption_key, p)}\n')
+        crypto.write(f'{msg * pow(public_key, encryption_key, p) % p}\n')
 
 
 def decrypt():
     with open('private.txt') as private, open('crypto.txt') as crypto:
-        pass
+        p = int(private.readline())
+        g = int(private.readline())
+        private_key = int(private.readline())
+        crp_key = int(crypto.readline())
+        crp_msg = int(crypto.readline())
+
+        shadow = pow(crp_key, private_key, p)
+        e = pow(shadow, -1, p)
+        msg = crp_msg * e % p
+
     with open('decrypt.txt', 'w') as decrypt:
-        pass
+        decrypt.write(f'{msg}\n')
 
 
 def sign():
@@ -87,8 +104,11 @@ def main():
     except FileNotFoundError as err:
         print(f'Nie znaleziono pliku: "{err.filename}"')
         sys.exit(2)
-    except ValueError as err:
-        print(f'Niepoprawny format pliku elgamal.txt')
+    except ValueError:
+        print(f'Niepoprawny format pliku')
+        sys.exit(3)
+    except AssertionError:
+        print(f'Szyfrowana wiadomość nie spełnia warunku: m < p')
         sys.exit(3)
 
 
