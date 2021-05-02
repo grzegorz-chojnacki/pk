@@ -6,8 +6,8 @@
 
 import getopt
 import sys
-import math as m
-import random as r
+from math import gcd
+from random import randint
 
 
 def read_lines(filename, n=1):
@@ -25,17 +25,17 @@ def write_lines(filename, values):
 
 
 def generate_keys(p, g):
-    private_key = r.randint(1, p - 1)
+    private_key = randint(1, p - 1)
     public_key = pow(g, private_key, p)
     return (private_key, public_key)
 
 
-def encrypt(msg, p, g, public_key):
+def encrypt(msg, p, g, key):
     assert msg < p
-    encryption_key = r.randint(1, p - 1)
+    encryption_key = randint(1, p - 1)
 
     shadow = pow(g, encryption_key, p)
-    cryptogram = msg * pow(public_key, encryption_key, p) % p
+    cryptogram = msg * pow(key, encryption_key, p) % p
     return [shadow, cryptogram]
 
 
@@ -47,8 +47,8 @@ def decrypt(crypto_msg, crypto_key, p, key):
 
 def random_coprime(p):
     while True:
-        sign_key = r.randint(2, p - 1)
-        if m.gcd(sign_key, p) == 1:
+        sign_key = randint(2, p - 1)
+        if gcd(sign_key, p) == 1:
             yield sign_key
 
 
@@ -59,7 +59,6 @@ def sign(msg, p, g, key):
     sign_key_e = pow(sign_key, -1, p - 1)
     r = pow(g, sign_key, p)
     x = (msg - key * r) * sign_key_e % (p - 1)
-
     return [r, x]
 
 
