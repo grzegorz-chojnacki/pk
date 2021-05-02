@@ -10,53 +10,48 @@ import math as m
 import random as r
 
 
-def write_key_tuple(filename, key_tuple):
-    p, g, key = key_tuple
+def read_lines(filename):
+    with open(filename) as src:
+        return tuple(int(n) for n in src.readlines())
+
+
+def write_lines(filename, payload):
     with open(filename, 'w') as out:
-        out.write(f'{p}\n')
-        out.write(f'{g}\n')
-        out.write(f'{key}\n')
+        for value in payload:
+            out.write(f'{value}\n')
 
 
 def generate_keys():
-    with open('elgamal.txt') as elgamal:
-        p = int(elgamal.readline())
-        g = int(elgamal.readline())
-        private_key = r.randint(1, p - 1)
-        public_key = pow(g, private_key, p)
-        write_key_tuple('public.txt', (p, g, public_key))
-        write_key_tuple('private.txt', (p, g, private_key))
+    (p, g) = read_lines('elgamal.txt')
+
+    private_key = r.randint(1, p - 1)
+    public_key = pow(g, private_key, p)
+
+    write_lines('public.txt', [p, g, public_key])
+    write_lines('private.txt', [p, g, private_key])
 
 
 def encrypt():
-    with open('public.txt') as public, open('plain.txt') as plain:
-        msg = int(plain.readline())
-        p = int(public.readline())
-        g = int(public.readline())
-        public_key = int(public.readline())
+    (msg,) = read_lines('plain.txt')
+    (p, g, public_key) = read_lines('public.txt')
 
-        assert msg < p
-        encryption_key = r.randint(1, p - 1)
+    assert msg < p
+    encryption_key = r.randint(1, p - 1)
 
-    with open('crypto.txt', 'w') as crypto:
-        crypto.write(f'{pow(g, encryption_key, p)}\n')
-        crypto.write(f'{msg * pow(public_key, encryption_key, p) % p}\n')
+    shadow = pow(g, encryption_key, p)
+    cryptogram = msg * pow(public_key, encryption_key, p) % p
+    write_lines('crypto.txt', [shadow, cryptogram])
 
 
 def decrypt():
-    with open('private.txt') as private, open('crypto.txt') as crypto:
-        crp_key = int(crypto.readline())
-        crp_msg = int(crypto.readline())
-        p = int(private.readline())
-        _ = int(private.readline())
-        private_key = int(private.readline())
+    (crp_key, crp_msg) = read_lines('crypto.txt')
+    (p, _, private_key) = read_lines('private.txt')
 
-        shadow = pow(crp_key, private_key, p)
-        e = pow(shadow, -1, p)
-        msg = crp_msg * e % p
+    shadow = pow(crp_key, private_key, p)
+    e = pow(shadow, -1, p)
+    msg = crp_msg * e % p
 
-    with open('decrypt.txt', 'w') as decrypt:
-        decrypt.write(f'{msg}\n')
+    write_lines('decrypt.txt', [msg])
 
 
 def random_coprime(p):
@@ -67,41 +62,30 @@ def random_coprime(p):
 
 
 def sign():
-    with open('private.txt') as private, open('message.txt') as message:
-        msg = int(message.readline())
-        p = int(private.readline())
-        g = int(private.readline())
-        private_key = int(private.readline())
+    (msg,) = read_lines('message.txt')
+    (p, g, private_key) = read_lines('private.txt')
 
-        assert msg < p
+    assert msg < p
 
-        sign_key = next(random_coprime(p - 1))
-        sign_key_e = pow(sign_key, -1, p - 1)
-        r = pow(g, sign_key, p)
-        x = (msg - private_key * r) * sign_key_e % (p - 1)
+    sign_key = next(random_coprime(p - 1))
+    sign_key_e = pow(sign_key, -1, p - 1)
+    r = pow(g, sign_key, p)
+    x = (msg - private_key * r) * sign_key_e % (p - 1)
 
-    with open('signature.txt', 'w') as signature:
-        signature.write(f'{r}\n')
-        signature.write(f'{x}\n')
+    write_lines('signature.txt', [r, x])
 
 
 def verify():
-    with open('public.txt') as public, open('message.txt') as message, open('signature.txt') as signature:
-        msg = int(message.readline())
-        r = int(signature.readline())
-        x = int(signature.readline())
-        p = int(public.readline())
-        g = int(public.readline())
-        public_key = int(public.readline())
+    (msg,) = read_lines('message.txt')
+    (r, x) = read_lines('signature.txt')
+    (p, g, public_key) = read_lines('public.txt')
 
-        left = pow(g, msg, p)
-        right = pow(r, x, p) * pow(public_key, r, p) % p
-        print(left)
-        print(right)
+    left = pow(g, msg, p)
+    right = pow(r, x, p) * pow(public_key, r, p) % p
 
-    with open('verify.txt', 'w') as verify:
-        result = 'T' if left == right else 'N'
-        verify.write(f'{result}\n')
+    result = 'T' if left == right else 'N'
+    write_lines('verify.txt', [result])
+
     return result
 
 
