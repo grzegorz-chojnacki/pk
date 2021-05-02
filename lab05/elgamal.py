@@ -15,43 +15,31 @@ def read_lines(filename):
         return tuple(int(n) for n in src.readlines())
 
 
-def write_lines(filename, payload):
+def write_lines(filename, values):
     with open(filename, 'w') as out:
-        for value in payload:
+        for value in values:
             out.write(f'{value}\n')
 
 
-def generate_keys():
-    (p, g) = read_lines('elgamal.txt')
-
+def generate_keys(p, g):
     private_key = r.randint(1, p - 1)
     public_key = pow(g, private_key, p)
-
-    write_lines('public.txt', [p, g, public_key])
-    write_lines('private.txt', [p, g, private_key])
+    return (private_key, public_key)
 
 
-def encrypt():
-    (msg,) = read_lines('plain.txt')
-    (p, g, public_key) = read_lines('public.txt')
-
+def encrypt(msg, p, g, public_key):
     assert msg < p
     encryption_key = r.randint(1, p - 1)
 
     shadow = pow(g, encryption_key, p)
     cryptogram = msg * pow(public_key, encryption_key, p) % p
-    write_lines('crypto.txt', [shadow, cryptogram])
+    return [shadow, cryptogram]
 
 
-def decrypt():
-    (crp_key, crp_msg) = read_lines('crypto.txt')
-    (p, _, private_key) = read_lines('private.txt')
-
-    shadow = pow(crp_key, private_key, p)
+def decrypt(crypto_msg, crypto_key, p, key):
+    shadow = pow(crypto_key, key, p)
     e = pow(shadow, -1, p)
-    msg = crp_msg * e % p
-
-    write_lines('decrypt.txt', [msg])
+    return crypto_msg * e % p
 
 
 def random_coprime(p):
@@ -61,32 +49,21 @@ def random_coprime(p):
             yield sign_key
 
 
-def sign():
-    (msg,) = read_lines('message.txt')
-    (p, g, private_key) = read_lines('private.txt')
-
+def sign(msg, p, g, key):
     assert msg < p
 
     sign_key = next(random_coprime(p - 1))
     sign_key_e = pow(sign_key, -1, p - 1)
     r = pow(g, sign_key, p)
-    x = (msg - private_key * r) * sign_key_e % (p - 1)
+    x = (msg - key * r) * sign_key_e % (p - 1)
 
-    write_lines('signature.txt', [r, x])
+    return [r, x]
 
 
-def verify():
-    (msg,) = read_lines('message.txt')
-    (r, x) = read_lines('signature.txt')
-    (p, g, public_key) = read_lines('public.txt')
-
-    left = pow(g, msg, p)
-    right = pow(r, x, p) * pow(public_key, r, p) % p
-
-    result = 'T' if left == right else 'N'
-    write_lines('verify.txt', [result])
-
-    return result
+def verify(msg, r, x, p, g, key):
+    exp1 = pow(g, msg, p)
+    exp2 = pow(r, x, p) * pow(key, r, p) % p
+    return exp1 == exp2
 
 
 def main():
@@ -97,19 +74,44 @@ def main():
 
         opt, _ = opts[0]
         if opt == '-k':
-            generate_keys()
+            (p, g) = read_lines('elgamal.txt')
+
+            (private, public) = generate_keys(p, g)
+
+            write_lines('public.txt', [p, g, public])
+            write_lines('private.txt', [p, g, private])
             print('Wygenerowano parę kluczy')
+
         elif opt == '-e':
-            encrypt()
+            (msg,) = read_lines('plain.txt')
+            (p, g, key) = read_lines('public.txt')
+
+            write_lines('crypto.txt', encrypt(msg, p, g, key))
             print('Zaszyfrowano wiadomość')
+
         elif opt == '-d':
-            decrypt()
+            (crypto_key, crypto_msg) = read_lines('crypto.txt')
+            (p, _, key) = read_lines('private.txt')
+
+            msg = decrypt(crypto_msg, crypto_key, p, key)
+            write_lines('decrypt.txt', [msg])
             print('Odszyfrowano wiadomość')
+
         elif opt == '-s':
-            sign()
+            (msg,) = read_lines('message.txt')
+            (p, g, key) = read_lines('private.txt')
+
+            write_lines('signature.txt', sign(msg, p, g, key))
             print('Wyprodukowano podpis')
+
         elif opt == '-v':
-            print(verify())
+            (msg,) = read_lines('message.txt')
+            (r, x) = read_lines('signature.txt')
+            (p, g, key) = read_lines('public.txt')
+
+            result = 'T' if verify(msg, r, x, p, g, key) else 'N'
+            write_lines('verify.txt', [result])
+            print(result)
         else:
             raise getopt.GetoptError('')
 
