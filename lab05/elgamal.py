@@ -10,9 +10,12 @@ import math as m
 import random as r
 
 
-def read_lines(filename):
+def read_lines(filename, n=1):
     with open(filename) as src:
-        return tuple(int(n) for n in src.readlines())
+        if n == 1:
+            return int(next(src))
+        else:
+            return tuple(int(next(src)) for i in range(0, n))
 
 
 def write_lines(filename, values):
@@ -74,8 +77,7 @@ def main():
 
         opt, _ = opts[0]
         if opt == '-k':
-            (p, g) = read_lines('elgamal.txt')
-
+            (p, g) = read_lines('elgamal.txt', 2)
             (private, public) = generate_keys(p, g)
 
             write_lines('public.txt', [p, g, public])
@@ -83,31 +85,31 @@ def main():
             print('Wygenerowano parę kluczy')
 
         elif opt == '-e':
-            (msg,) = read_lines('plain.txt')
-            (p, g, key) = read_lines('public.txt')
+            msg = read_lines('plain.txt')
+            (p, g, key) = read_lines('public.txt', 3)
 
             write_lines('crypto.txt', encrypt(msg, p, g, key))
             print('Zaszyfrowano wiadomość')
 
         elif opt == '-d':
-            (crypto_key, crypto_msg) = read_lines('crypto.txt')
-            (p, _, key) = read_lines('private.txt')
+            (crypto_key, crypto_msg) = read_lines('crypto.txt', 2)
+            (p, _, key) = read_lines('private.txt', 3)
 
             msg = decrypt(crypto_msg, crypto_key, p, key)
             write_lines('decrypt.txt', [msg])
             print('Odszyfrowano wiadomość')
 
         elif opt == '-s':
-            (msg,) = read_lines('message.txt')
-            (p, g, key) = read_lines('private.txt')
+            msg = read_lines('message.txt')
+            (p, g, key) = read_lines('private.txt', 3)
 
             write_lines('signature.txt', sign(msg, p, g, key))
             print('Wyprodukowano podpis')
 
         elif opt == '-v':
-            (msg,) = read_lines('message.txt')
-            (r, x) = read_lines('signature.txt')
-            (p, g, key) = read_lines('public.txt')
+            msg = read_lines('message.txt')
+            (r, x) = read_lines('signature.txt', 2)
+            (p, g, key) = read_lines('public.txt', 3)
 
             result = 'T' if verify(msg, r, x, p, g, key) else 'N'
             write_lines('verify.txt', [result])
