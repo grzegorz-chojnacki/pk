@@ -89,12 +89,41 @@ def fake_typo_insertion_decrypt():
     pass
 
 
+REGEX = r'<(div|p|li|td)( [^\\]*?)?>'
+
 def useless_tag_insertion_encrypt(bits):
-    pass
+    with open('cover.html') as src, open('watermark.html', 'w') as dst:
+        bits = iter(bits)
+
+        def sub(m):
+            tag = m.group(1)
+            attrs = m.group(2) or ''
+            if next(bits, None) == '1':
+                return f'<{tag} style="display: none"></{tag}><{tag}{attrs}>'
+            else:
+                return f'<{tag}{attrs}>'
+
+        data = re.sub(REGEX, sub, src.read())
+        dst.write(data)
 
 
 def useless_tag_insertion_decrypt():
-    pass
+    with open('watermark.html') as src, open('detect.txt', 'w') as dst:
+        bits = []
+        found = re.findall(REGEX, src.read())
+
+        tag_before = False
+        for (_, attrs) in found:
+            if attrs == ' style="display: none"':
+                bits.append('1')
+                tag_before = True
+            else:
+                if tag_before:
+                    tag_before = False
+                else:
+                    bits.append('0')
+
+        dst.write(decrypt(bits))
 
 
 def main():
@@ -123,8 +152,8 @@ def main():
 
         with open('mess.txt') as mess:
             msg = mess.read()
-            single_double_space_encrypt(encrypt(msg))
-            single_double_space_decrypt()
+            useless_tag_insertion_encrypt(encrypt(msg))
+            useless_tag_insertion_decrypt()
 
     except getopt.GetoptError:
         print(f'użycie: {sys.argv[0]} -[de] -[1234]')
