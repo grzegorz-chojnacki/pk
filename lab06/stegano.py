@@ -32,53 +32,56 @@ def decrypt(bits):
     return ''.join(map(transform, chunks(bits, 4)))
 
 
-def line_end_space_encrypt(bits):
+def encrypt_regex(msg, regex, replace_fn):
     with open('cover.html') as src, open('watermark.html', 'w') as dst:
-        lines = [line.replace(' \n', '\n') for line in src.readlines()]
-        lines = [line[:-1] + ' \n' if bit == '1' else line
-                 for (bit, line) in it.zip_longest(bits, lines)]
-        dst.writelines(lines)
+        bits = iter(encrypt(msg))
+        data = re.sub(regex, replace_fn(bits), src.read())
+        dst.write(data)
 
 
-def line_end_space_decrypt():
+def decrypt_regex(regex, find_fn):
     with open('watermark.html') as src, open('detect.txt', 'w') as dst:
-        bits = ['1' if len(line) >= 2 and line[-2] == ' ' else '0'
-                for line in src.readlines()]
+        found = re.findall(regex, src.read())
+        bits = find_fn(found)
+        dst.write(decrypt(bits))
 
-        dst.writelines(decrypt(bits))
+
+def line_end_space_encrypt(bits):
+    def sub(m):
+        if next(bits, None) == '1':
+            return ' \n'
+        else:
+            return '\n'
+    return sub
+
+
+def line_end_space_decrypt(found):
+    bits = []
+    for maybe_space in found:
+        if maybe_space == ' ':
+            bits.append('1')
+        else:
+            bits.append('0')
+    return bits
 
 
 def single_double_space_encrypt(bits):
-    with open('cover.html') as src, open('watermark.html', 'w') as dst:
-        characters = ''.join([re.sub(r'([ ]+)', ' ', line)
-                              for line in src.readlines()])
-        bits = iter(bits)
-        for c in characters:
-            if c != ' ':
-                dst.write(c)
-            elif next(bits, None) == '1':
-                dst.write('  ')
-            else:
-                dst.write(' ')
+    def sub(m):
+        if next(bits, None) == '1':
+            return '  '
+        else:
+            return ' '
+    return sub
 
 
-def single_double_space_decrypt():
-    with open('watermark.html') as src, open('detect.txt', 'w') as dst:
-        space_before = False
-        bits = []
-        for c in src.read():
-            if c == ' ':
-                if space_before:
-                    space_before = False
-                    bits.append('1')
-                else:
-                    space_before = True
-            else:
-                if space_before:
-                    space_before = False
-                    bits.append('0')
-
-        dst.writelines(decrypt(bits))
+def single_double_space_decrypt(found):
+    bits = []
+    for maybe_space in found:
+        if maybe_space != '':
+            bits.append('1')
+        else:
+            bits.append('0')
+    return bits
 
 
 def fake_typo_insertion_encrypt(bits):
@@ -89,71 +92,88 @@ def fake_typo_insertion_decrypt():
     pass
 
 
-REGEX = r'<(div|p|li|td)( [^\\]*?)?>'
-
 def useless_tag_insertion_encrypt(bits):
-    with open('cover.html') as src, open('watermark.html', 'w') as dst:
-        bits = iter(bits)
+    def sub(m):
+        tag = m.group(1)
+        attrs = m.group(2) or ''
+        if next(bits, None) == '1':
+            return f'<{tag} style="display: none"></{tag}><{tag}{attrs}>'
+        else:
+            return f'<{tag}{attrs}>'
+    return sub
 
-        def sub(m):
-            tag = m.group(1)
-            attrs = m.group(2) or ''
-            if next(bits, None) == '1':
-                return f'<{tag} style="display: none"></{tag}><{tag}{attrs}>'
+
+def useless_tag_insertion_decrypt(found):
+    bits = []
+    tag_before = False
+    for (_, attrs) in found:
+        if attrs == ' style="display: none"':
+            bits.append('1')
+            tag_before = True
+        else:
+            if tag_before:
+                tag_before = False
             else:
-                return f'<{tag}{attrs}>'
-
-        data = re.sub(REGEX, sub, src.read())
-        dst.write(data)
+                bits.append('0')
+    return bits
 
 
-def useless_tag_insertion_decrypt():
-    with open('watermark.html') as src, open('detect.txt', 'w') as dst:
-        bits = []
-        found = re.findall(REGEX, src.read())
-
-        tag_before = False
-        for (_, attrs) in found:
-            if attrs == ' style="display: none"':
-                bits.append('1')
-                tag_before = True
-            else:
-                if tag_before:
-                    tag_before = False
-                else:
-                    bits.append('0')
-
-        dst.write(decrypt(bits))
+algorithms = {
+    "line_end": {
+        "encrypt": line_end_space_encrypt,
+        "decrypt": line_end_space_decrypt,
+        "regex": r'( )?\n',
+    },
+    "double_space": {
+        "encrypt": single_double_space_encrypt,
+        "decrypt": single_double_space_decrypt,
+        "regex": r' ( )*',
+    },
+    "fake_typo": {
+        "encrypt": fake_typo_insertion_encrypt,
+        "decrypt": fake_typo_insertion_decrypt,
+        "regex": None,
+    },
+    "useless_tag": {
+        "encrypt": useless_tag_insertion_encrypt,
+        "decrypt": useless_tag_insertion_decrypt,
+        "regex": r'<(div|p|li|td)( [^\\]*?)?>',
+    },
+}
 
 
 def main():
     try:
-        # opts, _ = getopt.getopt(sys.argv[1:], 'de1234')
-        # operation = encryption = None
+        opts, _ = getopt.getopt(sys.argv[1:], 'de1234')
+        algorithm_key = encryption = None
 
-        # for o, _ in opts:
-        #     if o == '-e':
-        #         encryption = True
-        #     elif o == '-d':
-        #         encryption = False
+        for o, _ in opts:
+            if o == '-e':
+                encryption = True
+            elif o == '-d':
+                encryption = False
 
-        # for o, _ in opts:
-        #     if o == '-1':
-        #         operation = line_end_space_encrypt if encryption else line_end_space_decrypt
-        #     elif o == '-2':
-        #         operation = single_double_space_encrypt if encryption else single_double_space_decrypt
-        #     elif o == '-3':
-        #         operation = fake_typo_insertion_encrypt if encryption else fake_typo_insertion_decrypt
-        #     elif o == '-4':
-        #         operation = useless_tag_insertion_encrypt if encryption else useless_tag_insertion_decrypt
+        for o, _ in opts:
+            if o == '-1':
+                algorithm_key = "line_end"
+            elif o == '-2':
+                algorithm_key = "double_space"
+            elif o == '-3':
+                algorithm_key = "fake_typo"
+            elif o == '-4':
+                algorithm_key = "useless_tag"
 
-        # if operation is None or encryption is None:
-        #     raise getopt.GetoptError('')
+        if algorithm_key is None or encryption is None:
+            raise getopt.GetoptError('')
 
-        with open('mess.txt') as mess:
-            msg = mess.read()
-            useless_tag_insertion_encrypt(encrypt(msg))
-            useless_tag_insertion_decrypt()
+        algorithm = algorithms[algorithm_key]
+
+        if encryption:
+            with open('mess.txt') as mess:
+                msg = mess.read()
+                encrypt_regex(msg, algorithm["regex"], algorithm["encrypt"])
+        else:
+            decrypt_regex(algorithm["regex"], algorithm["decrypt"])
 
     except getopt.GetoptError:
         print(f'użycie: {sys.argv[0]} -[de] -[1234]')
