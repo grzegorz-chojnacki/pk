@@ -6,4 +6,6 @@ pk.md
 
 *.pdf
 
+*.html
+
 __pycache__
