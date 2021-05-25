@@ -82,9 +82,9 @@ def fake_typo_insertion_encrypt(bits):
         tag = m.group(1)
         attrs = m.group(2) or ''
         if next(bits, None) == '1':
-            return f'<{tag} {attrs} style="font-family: inherit">'
+            return f'<{tag}{attrs} style="font-family: inherit">'
         else:
-            return f'<{tag} {attrs} style="font-famliy: inherit">'
+            return f'<{tag}{attrs} style="font-famliy: inherit">'
     return sub
 
 
