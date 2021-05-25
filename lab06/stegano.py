@@ -36,6 +36,9 @@ def encrypt_regex(msg, regex, replace_fn):
     with open('cover.html') as src, open('watermark.html', 'w') as dst:
         bits = iter(encrypt(msg))
         data = re.sub(regex, replace_fn(bits), src.read())
+
+        assert next(bits, None) is None
+
         dst.write(data)
 
 
@@ -181,6 +184,9 @@ def main():
     except FileNotFoundError as err:
         print(f'Nie znaleziono pliku: "{err.filename}"')
         sys.exit(2)
+    except AssertionError:
+        print(f'Podana wiadomość jest za długa')
+        sys.exit(3)
 
 
 if __name__ == "__main__":
