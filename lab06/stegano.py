@@ -88,11 +88,24 @@ def single_double_space_decrypt(found):
 
 
 def fake_typo_insertion_encrypt(bits):
-    pass
+    def sub(m):
+        tag = m.group(1)
+        attrs = m.group(2) or ''
+        if next(bits, None) == '1':
+            return f'<{tag} {attrs} style="font-family: inherit">'
+        else:
+            return f'<{tag} {attrs} style="font-famliy: inherit">'
+    return sub
 
 
-def fake_typo_insertion_decrypt():
-    pass
+def fake_typo_insertion_decrypt(found):
+    bits = []
+    for (_, attrs) in found:
+        if attrs.find('style="font-family: inherit"') != -1:
+            bits.append('1')
+        elif attrs.find('style="font-famliy: inherit"') != -1:
+            bits.append('0')
+    return bits
 
 
 def useless_tag_insertion_encrypt(bits):
@@ -135,7 +148,7 @@ algorithms = {
     "fake_typo": {
         "encrypt": fake_typo_insertion_encrypt,
         "decrypt": fake_typo_insertion_decrypt,
-        "regex": None,
+        "regex": r'<(div|p|li|td)( [^\\]*?)?>',
     },
     "useless_tag": {
         "encrypt": useless_tag_insertion_encrypt,
