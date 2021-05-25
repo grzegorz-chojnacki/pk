@@ -50,12 +50,7 @@ def decrypt_regex(regex, find_fn):
 
 
 def line_end_space_encrypt(bits):
-    def sub(m):
-        if next(bits, None) == '1':
-            return ' \n'
-        else:
-            return '\n'
-    return sub
+    return lambda m: ' \n' if next(bits, None) == '1' else '\n'
 
 
 def line_end_space_decrypt(found):
@@ -69,12 +64,7 @@ def line_end_space_decrypt(found):
 
 
 def single_double_space_encrypt(bits):
-    def sub(m):
-        if next(bits, None) == '1':
-            return '  '
-        else:
-            return ' '
-    return sub
+    return lambda m: '  ' if next(bits, None) == '1' else ' '
 
 
 def single_double_space_decrypt(found):
